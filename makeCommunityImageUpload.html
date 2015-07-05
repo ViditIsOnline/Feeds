@@ -1,0 +1,70 @@
+<!--oggpnosn \n hkhr -->
+<html>
+<head>
+	<title>NIT Goa College Feed</title>
+	<script src="/js/jquery.js"></script>
+    <!-- Bootstrap Core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/js/bootstrap.min.js"></script>
+    <link href="/css/style.css" rel="stylesheet">
+</head>	
+<body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">*</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#">Logout</a></li>
+          </ul>
+          
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+          <ul class="nav nav-sidebar">
+            <li><a href="/home">Welcome</a></li>
+            <li><a href="/news/add">Post News</a></li>
+            <li class="active"><a href="/community/add">Make Community</a></li>
+            <li><a href="/news/edit">Edit News</a></li>
+            <li><a href="/community/edit">Edit Community</a></li>
+            <li><a href="/timetable/add">Add Timetable</a></li>
+            <li><a href="/timetable/cancel">Cancel Class</a></li>
+          </ul>
+        </div>
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+          <h1 class="page-header">Make Community</h1>
+          <div class="row">
+            <div class="col-xs-12">
+              <h1> {{name}}</h1>
+              <p>{{about}}</p>
+              <form method="post" action="{{url}}" enctype="multipart/form-data">
+                 <div class="form-group">
+                  <label for="exampleInputFile" class="nitg-form-label">Image Upload</label>
+                  <input type="file" id="exampleInputFile" name="file">
+                  <p class="help-block">Example block-level help text here.</p>
+                </div>
+               
+                <button type="submit" class="btn btn-default">Upload</button>
+              </form>
+
+            </div>
+          </div>
+     
+          
+        </div>
+      </div>
+    </div>
+</body>
+</html>

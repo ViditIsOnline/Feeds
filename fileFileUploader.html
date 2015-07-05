@@ -1,0 +1,31 @@
+<!--oggpnosn \n hkhr -->
+<html>
+<head>
+	<title>NIT Goa College Feed</title>
+	<script src="js/jquery.js"></script>
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/bootstrap.min.js"></script>
+    <link href="css/style.css" rel="stylesheet">
+</head>	
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<img src="img/nitgoa.jpg" class="nitg-img"/>
+			</div>	
+		</div>
+		<div class="row">
+			<div class="col-xs-12">
+				<form class="form-signin" method="post" action="{{url}}" enctype="multipart/form-data">
+			        <h2 class="form-signin-heading">File Uploader</h2>
+			        <h3>{{name}}</h3>
+			        <label for="inputPassword" class="sr-only">File</label>
+			        <input type="file" name="file" class="form-control"  required>
+			        <button class="btn btn-lg btn-primary btn-block nitg-login-button" type="submit">Upload</button>
+			    </form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
