@@ -28,7 +28,6 @@ from urllib2 import Request, urlopen, HTTPError
 import json 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.ext.webapp import blobstore_handlers
 import urllib 
 import ast
 
