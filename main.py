@@ -171,7 +171,7 @@ def sendGcmMessage(message,groups):
 	        return True
 	    except HTTPError as e:
 	        return False
-    
+	self.response.write(resp)    
 class MainHandler(Handler):
         def get(self):
                 #self.render("signin.html")
