@@ -31,6 +31,9 @@ from google.appengine.ext.webapp import blobstore_handlers
 import urllib 
 import ast
 
+API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
+GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
+
 letters = string.ascii_letters
 letters = [x for x in letters]
 
@@ -99,9 +102,16 @@ class Timetable(ndb.Model):
     wednesday = ndb.PickleProperty(required = True)
     thursday = ndb.PickleProperty(required = True)
     friday = ndb.PickleProperty(required = True)
+
 class RegistrationIds(ndb.Model):
-    ids = ndb.PickleProperty()
+    id = ndb.StringProperty()
     name = ndb.StringProperty()
+
+class UserDetails(ndb.Model):
+	id = ndb.StringProperty()
+	name = ndb.StringProperty()
+	email = ndb.StringProperty()
+	group = ndb.StringProperty()	
 
 class Admin(ndb.Model):
     name = ndb.StringProperty(required= True)
@@ -123,29 +133,44 @@ class Handler(webapp2.RequestHandler):
             template = jinja_env.get_template(filename )
             self.response.write(template.render(parameter))
 
-def sendGcmMessage(message):
-    ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch(1)
-    idsSend = ids[0].ids
-    headers= {'Authorization': 'key=AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc', 'Content-Type': 'application/json'}
-    data = {'data': message,
-                'registration_ids': idsSend}
-    url = "https://android.googleapis.com/gcm/send"
-    request = Request(url, headers = headers, data = json.dumps(data))
-    try: 
-        resp = urlopen(request)
-        results = json.loads(resp.read())
-        results = results["results"]
-        ids = ids[0]
-        newIds = ids.ids
-        for i in range(len(ids.ids)):
-            if results[i].get("registration_id", None):
-                newIds[i] = results[i]["registration_id"] 
-        newIds = list(set(newIds)) 
-        ids.ids = newIds
-        ids.put()       
-        return True
-    except HTTPError as e:
-        return False
+# def sendGcmMessage(message):
+#     ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch()
+#     idsSend = ids[0].ids
+#     headers= {'Authorization': 'key='+ API_KEY, 'Content-Type': 'application/json'}
+#     data = {'data': {
+#     			"message": "Testing"},
+#             'to': '/topics/global'}
+            
+#     url = "https://gcm-http.googleapis.com/gcm/send"
+#     request = Request(url, headers = headers, data = json.dumps(data))
+#     try: 
+#         resp = urlopen(request)
+#         results = json.loads(resp.read())
+#         results = results["results"]
+#         ids = ids[0]
+#         newIds = ids.ids
+#         for i in range(len(ids.ids)):
+#             if results[i].get("registration_id", None):
+#                 newIds[i] = results[i]["registration_id"] 
+#         newIds = list(set(newIds)) 
+#         ids.ids = newIds
+#         ids.put()       
+#         return True
+#     except HTTPError as e:
+#         return False
+
+def sendGcmMessage(message,groups):
+    headers= {'Authorization': 'key='+ API_KEY, 'Content-Type': 'application/json'}
+    for group in groups:
+	    data = {'data': message,
+	            'to': '/topics/'+group}
+	    request = Request(GCM_URL, headers = headers, data = json.dumps(data))
+	    try: 
+	        resp = urlopen(request)
+	        results = json.loads(resp.read())
+	        return True
+	    except HTTPError as e:
+	        return False
     
 class MainHandler(Handler):
         def get(self):
@@ -254,12 +279,12 @@ class ThankHandler(Handler):
     def get(self):
         self.render("thank_you.html")
 
-class GCMHandler(Handler):
+class GCMTestHandler(Handler):
     def get(self):
-        message = {"message": "Its Working!"}
-        ids = RegistrationIds.query(RegistrationIds.name=="nitg").fetch(1)[0].ids
-        self.response.write(str(ids))
-        sendGcmMessage(message)
+        message = {"head" : "Test",
+        			"message" : "Testing!!"}
+        sendGcmMessage(message,["global"])
+
 class SignupHandler(Handler):
     def get(self):
         self.render("signup.html")
@@ -268,20 +293,18 @@ class HomeHandler(Handler):
         self.render("dashboard.html") 
 class RegisterHandler(Handler):
     def post(self):
-        id = self.request.get("token")
-        if len(id) != 0:
-            ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch(1)
-            if ids:
-                ids = ids[0]
-                ids.ids.append(id)
-                ids.put()
-            else:
-                ids = RegistrationIds()
-                ids.name = "nitg"
-                ids.ids = [id]
-                ids.put()
+        id = self.request.get("id")
+        name = self.request.get("name")
+        email = self.request.get("email")
+        group = self.request.get("group")
 
-            
+        if len(id) != 0:     
+            details = UserDetails()
+            details.id = id
+            details.name = name
+            details.email = email
+            details.group = group
+            details.put()      
             
 class PostNewsHandler(Handler):
     def get(self):
@@ -297,7 +320,9 @@ class PostNewsHandler(Handler):
         self.response.set_cookie("subject", subject)
         self.response.set_cookie("type", "news")
         parameter = {"subject": subject, "details": details, "url":upload_url}
-        sendGcmMessage({"message": "News: %s"%(subject)})
+        message = {"head" : "News",
+        			"message" :  subject}
+        sendGcmMessage(message, ["global"])
         self.render("postNewsImageUpload.html", parameter = parameter)
 
 class NewsSuccessHandler(Handler):
@@ -400,7 +425,9 @@ class CommunityHandler(Handler):
             upload_url = blobstore.create_upload_url('/upload')
             self.response.set_cookie("name", name)
             self.response.set_cookie("type", "community") 
-            sendGcmMessage({"message":"New Community: %s"%name})
+            message = {"head" : "Community",
+            			"message": name + " added."}
+            sendGcmMessage(message, ["global"])
             parameter = {"name": name, "about": about, "url":upload_url}
             self.render("makeCommunityImageUpload.html", parameter = parameter)
         else:
@@ -448,7 +475,9 @@ class PicsUploaderHandler(Handler):
             self.response.set_cookie("type", "pics")
             upload_url = blobstore.create_upload_url('/upload')     
             parameter = {"url" : upload_url, "caption": caption}
-            sendGcmMessage({"message":"Pic Upload:%s"%caption})
+            message = {"head" : "Picture",
+            			"message": caption}
+            sendGcmMessage(message, ["global"])
             self.render("picImageUploader.html", parameter = parameter)
         else:
             self.response.write("Captions cant be empty!")    
@@ -537,11 +566,13 @@ class CancelConfirmHandler(Handler):
         reason = self.request.get("message")
         classes = self.request.get_all("classesSelected")
         if reason and classes:
-            message = {"message": " ".join(classes)+ " cancelled. Reason:" + reason}
-            sendGcmMessage(message)    
+            message = {"head" : "Notification",
+            			"message": ",".join(classes)+ " cancelled.\nReason:" + reason}
+            sendGcmMessage(message, ["global"])    
             self.render("cancelClassSuccess.html")
         else:
             self.response.write("Failed Kindly enter the message and select classes!")    
+
 class TimetableAppHandler(Handler):
     def post(self):
         degree = self.request.get("degree")
@@ -611,13 +642,15 @@ class FileHandler(Handler):
             self.response.set_cookie("type", "files")
             upload_url = blobstore.create_upload_url('/upload')     
             parameter = {"url" : upload_url, "name": name}
-            sendGcmMessage({"message":"File Upload:%s"%name})
+            message = {"head" : "File Shared",
+            			"message": name}
+            sendGcmMessage(message, ["global"])
             self.render("fileFileUploader.html", parameter = parameter)
         else:
             self.response.write("Name cannot be empty!")         
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler), ('/gcm', GCMHandler), ('/signup', SignupHandler), ('/home', HomeHandler), ('/register', RegisterHandler),
+    ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler), ('/register', RegisterHandler),
     ('/news/add', PostNewsHandler), ('/upload', UploadHandler), ('/wall', WallHandler), ('/serve/([^/]+)?', ServeHandler), ('/community/add', CommunityHandler), 
     ('/app/community', CommunityAppHandler), ('/app/news', NewsAppHandler), ('/pic', PicsUploaderHandler), ('/app/pic', PicsAppHandler), ('/timetable/add', TimetableHandler),
     ('/timetable/cancel', CancelClassHander), ('/timetable/cancel/confirm', CancelConfirmHandler), ('/app/timetable', TimetableAppHandler),
