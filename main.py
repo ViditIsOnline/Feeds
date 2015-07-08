@@ -28,7 +28,6 @@ from urllib2 import Request, urlopen, HTTPError
 import json 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.ext.webapp import blobstore_handlers
 import urllib 
 import ast
 
@@ -269,7 +268,7 @@ class HomeHandler(Handler):
         self.render("dashboard.html") 
 class RegisterHandler(Handler):
     def post(self):
-        id = self.request.get("registration_id")
+        id = self.request.get("token")
         if len(id) != 0:
             ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch(1)
             if ids:
