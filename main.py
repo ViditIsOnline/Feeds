@@ -268,7 +268,7 @@ class HomeHandler(Handler):
         self.render("dashboard.html") 
 class RegisterHandler(Handler):
     def post(self):
-        id = self.request.get("registration_id")
+        id = self.request.get("token")
         if len(id) != 0:
             ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch(1)
             if ids:
