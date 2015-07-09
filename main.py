@@ -108,7 +108,7 @@ class RegistrationIds(ndb.Model):
     name = ndb.StringProperty()
 
 class UserDetails(ndb.Model):
-	id = ndb.StringProperty()
+	token = ndb.StringProperty()
 	name = ndb.StringProperty()
 	email = ndb.StringProperty()
 	group = ndb.StringProperty()	
@@ -293,14 +293,14 @@ class HomeHandler(Handler):
         self.render("dashboard.html") 
 class RegisterHandler(Handler):
     def post(self):
-        id = self.request.get("id")
+        token = self.request.get("id")
         name = self.request.get("name")
         email = self.request.get("email")
         group = self.request.get("group")
 
         if len(id) != 0:     
             details = UserDetails()
-            details.id = id
+            details.token = token
             details.name = name
             details.email = email
             details.group = group
