@@ -19,16 +19,16 @@ import webapp2
 import jinja2
 import hmac
 import hashlib
-import json
+import json 
 from google.appengine.ext import ndb
-import string
-import random
+import string 
+import random 
 from google.appengine.api import mail
 from urllib2 import Request, urlopen, HTTPError
-import json
+import json 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-import urllib
+import urllib 
 import ast
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
@@ -37,13 +37,13 @@ GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
 letters = string.ascii_letters
 letters = [x for x in letters]
 
-message = """Hello,
+message = """Hello, 
 Your voting details are as follows:
 username: %s
 password: %s
-Please login to http://cseaelection.appspot.com to cast your vote.
-Voting Portal will be closed tommorow ie 23/08/2014 at 5 pm.
-Happy Voting
+Please login to http://cseaelection.appspot.com to cast your vote. 
+Voting Portal will be closed tommorow ie 23/08/2014 at 5 pm. 
+Happy Voting 
 Connectree Team :-)
 """
 
@@ -51,7 +51,7 @@ def passwordGenerator():
     target = ""
     for i in range(10):
         target += random.choice(letters)
-    return target
+    return target 
 
 
 template_dir = os.path.dirname(__file__)
@@ -79,9 +79,9 @@ class News(ndb.Model):
     subject = ndb.StringProperty(required= True)
     details = ndb.TextProperty(required= True)
     image = ndb.BlobProperty()
-
+    
 class Community(ndb.Model):
-    name = ndb.StringProperty(required= True)
+    name = ndb.StringProperty(required= True)    
     about = ndb.TextProperty(required= True)
     image = ndb.BlobProperty()
 
@@ -113,7 +113,7 @@ class UserDetails(ndb.Model):
     email = ndb.StringProperty(required = True)
     group = ndb.StringProperty(required = True)
     branch = ndb.StringProperty(required = True)
-    year = ndb.StringProperty(required = True)
+    year = ndb.StringProperty(required = True)	
 
 class Admin(ndb.Model):
     name = ndb.StringProperty(required= True)
@@ -121,31 +121,31 @@ class Admin(ndb.Model):
     password = ndb.StringProperty(required= True)
 class Wall(ndb.Model):
     text = ndb.TextProperty()
-    name = ndb.StringProperty()
+    name = ndb.StringProperty()    
 
 class Handler(webapp2.RequestHandler):
-    def write(self, *a, **kw):
-        self.response.out.write(*a, **kw)
+        def write(self, *a, **kw):
+                self.response.out.write(*a, **kw)
 
-    def render_str(self, template, **params):
-        t = jinja_env.get_template(template)
-        return t.render(params)
+        def render_str(self, template, **params):
+                t = jinja_env.get_template(template)
+                return t.render(params)
 
-    def render(self, filename, parameter={}):
-        template = jinja_env.get_template(filename )
-        self.response.write(template.render(parameter))
+        def render(self, filename, parameter={}):
+            template = jinja_env.get_template(filename )
+            self.response.write(template.render(parameter))
 
 # def sendGcmMessage(message):
 #     ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch()
 #     idsSend = ids[0].ids
 #     headers= {'Authorization': 'key='+ API_KEY, 'Content-Type': 'application/json'}
 #     data = {'data': {
-#                       "message": "Testing"},
+#     			"message": "Testing"},
 #             'to': '/topics/global'}
-
+            
 #     url = "https://gcm-http.googleapis.com/gcm/send"
 #     request = Request(url, headers = headers, data = json.dumps(data))
-#     try:
+#     try: 
 #         resp = urlopen(request)
 #         results = json.loads(resp.read())
 #         results = results["results"]
@@ -153,10 +153,10 @@ class Handler(webapp2.RequestHandler):
 #         newIds = ids.ids
 #         for i in range(len(ids.ids)):
 #             if results[i].get("registration_id", None):
-#                 newIds[i] = results[i]["registration_id"]
-#         newIds = list(set(newIds))
+#                 newIds[i] = results[i]["registration_id"] 
+#         newIds = list(set(newIds)) 
 #         ids.ids = newIds
-#         ids.put()
+#         ids.put()       
 #         return True
 #     except HTTPError as e:
 #         return False
@@ -164,89 +164,89 @@ class Handler(webapp2.RequestHandler):
 def sendGcmMessage(message,groups):
     headers= {'Authorization': 'key='+ API_KEY, 'Content-Type': 'application/json'}
     for group in groups:
-        data = {'data': message,
-                'to': '/topics/'+group}
-        request = Request(GCM_URL, headers = headers, data = json.dumps(data))
-        try:
-            resp = urlopen(request)
-            results = json.loads(resp.read())
-            return True
-        except HTTPError as e:
-            return False
+	    data = {'data': message,
+	            'to': '/topics/'+group}
+	    request = Request(GCM_URL, headers = headers, data = json.dumps(data))
+	    try: 
+	        resp = urlopen(request)
+	        results = json.loads(resp.read())
+	        return True
+	    except HTTPError as e:
+	        return False
 
 class MainHandler(Handler):
-    def get(self):
-            #self.render("signin.html")
-        self.render("index.html")
-
-    def post(self):
-        emailid = self.request.get("Email")
-        password = self.request.get("password")
-        if emailid and password:
-            admin = Admin.query(Admin.emailid == emailid , Admin.password == password).fetch(1)
-            if admin:
-                self.response.headers.add_header("Set-Cookie",str("email=%s"%(emailid)))
-                self.response.headers.add_header("Set-Cookie",str("password=%s"%( passwordGenerator())))
-                self.response.headers.add_header("Set-Cookie",str("qid=%s"%( hashlib.sha256(password).hexdigest())))
-                #self.redirect("/votelist")
-            else:
-                self.response.write("Sorry You aint Authorized!!")
-
-        else:
-            self.response.write("Wrong emailId or password :/")
+        def get(self):
+                #self.render("signin.html")
+                self.render("index.html")
+      
+        def post(self):
+                emailid = self.request.get("Email")
+                password = self.request.get("password")
+                if emailid and password:
+                        admin = Admin.query(Admin.emailid == emailid , Admin.password == password).fetch(1)
+                        if admin:
+                            self.response.headers.add_header("Set-Cookie",str("email=%s"%(emailid)))
+                            self.response.headers.add_header("Set-Cookie",str("password=%s"%( passwordGenerator())))
+                            self.response.headers.add_header("Set-Cookie",str("qid=%s"%( hashlib.sha256(password).hexdigest())))
+                            #self.redirect("/votelist")
+                        else:
+                            self.response.write("Sorry You aint Authorized!!")    
+                
+                else:
+                        self.response.write("Wrong emailId or password :/")
 
 
 class VoteHandler(Handler):
-    def get(self):
-        email = self.request.cookies.get("email", None)
-        password = self.request.cookies.get("qid", None)
-        if email and password:
-            voter = Voter.query(Voter.emailid == email).fetch(1)
-            if voter:
-                voter = voter[0]
-                if password ==  hashlib.sha256(voter.password).hexdigest():
-                    if not voter.completed:
-                        self.render("candidates.html")
-                    else:
-                        self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")
-                else:
-                    self.response.write("Haaha and you think it will work!!!")
-        else:
-            self.redirect("/")
-    def post(self):
-        email = self.request.cookies.get("email", None)
-        password = self.request.cookies.get("qid", None)
-        if email and password:
-            voter = Voter.query(Voter.emailid == email).fetch(1)
-            if voter:
-                voter = voter[0]
-                if password ==  hashlib.sha256(voter.password).hexdigest():
-                    if not voter.completed:
-                        president = self.request.get("president")
-                        vice_president = self.request.get("vice-president")
-                        treasurer = self.request.get("treasurer")
-                        secretary = self.request.get("secretary")
-                        gen_secretary = self.request.get("gen-secretary")
-                        joint_secretary = self.request.get("joint-secretary")
-                        mtech_secretary = self.request.get("secretary-mtech")
-                        if president and vice_president and treasurer and secretary and gen_secretary and joint_secretary and mtech_secretary:
-                            candidates = [president, vice_president, treasurer, secretary, gen_secretary, joint_secretary, mtech_secretary]
-                            for candidate in candidates:
-                                nominee = Nominee.query(Nominee.name == candidate).fetch(1)
-                                if nominee:
-                                    nominee = nominee[0]
-                                    nominee.noOfVotes += 1
-                                    voter.completed = True
-                                    #nominee.put()
-                                    #voter.put()
-                                    #self.redirect("/thankYou")
-                                    self.redirect("/result")
+        def get(self):
+                email = self.request.cookies.get("email", None)
+                password = self.request.cookies.get("qid", None)
+                if email and password:
+                    voter = Voter.query(Voter.emailid == email).fetch(1)
+                    if voter:
+                        voter = voter[0]
+                        if password ==  hashlib.sha256(voter.password).hexdigest():
+                            if not voter.completed:
+                                self.render("candidates.html")
+                            else:
+                                self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")    
                         else:
-                            self.response.write("Kindly vote for all fields, your vote was rejected!")
-                    else:
-                        self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")
-
-                        self.response.write(president + "," + vice_president + "," + treasurer + "," + secretary + "," + gen_secretary+ "," + joint_secretary + "," + mtech_secretary)
+                            self.response.write("Haaha and you think it will work!!!")    
+                else:
+                    self.redirect("/")        
+        def post(self):
+            email = self.request.cookies.get("email", None)
+            password = self.request.cookies.get("qid", None)
+            if email and password:
+                voter = Voter.query(Voter.emailid == email).fetch(1)
+                if voter:
+                    voter = voter[0]
+                    if password ==  hashlib.sha256(voter.password).hexdigest():
+                        if not voter.completed:
+                            president = self.request.get("president")
+                            vice_president = self.request.get("vice-president")
+                            treasurer = self.request.get("treasurer")
+                            secretary = self.request.get("secretary")
+                            gen_secretary = self.request.get("gen-secretary")
+                            joint_secretary = self.request.get("joint-secretary")
+                            mtech_secretary = self.request.get("secretary-mtech")
+                            if president and vice_president and treasurer and secretary and gen_secretary and joint_secretary and mtech_secretary:
+                                candidates = [president, vice_president, treasurer, secretary, gen_secretary, joint_secretary, mtech_secretary]
+                                for candidate in candidates:
+                                    nominee = Nominee.query(Nominee.name == candidate).fetch(1)
+                                    if nominee:
+                                        nominee = nominee[0]
+                                        nominee.noOfVotes += 1
+                                        voter.completed = True
+                                        #nominee.put()
+                                        #voter.put()
+                                        #self.redirect("/thankYou")
+                                        self.redirect("/result")
+                            else:
+                                self.response.write("Kindly vote for all fields, your vote was rejected!")            
+                        else:
+                            self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")                
+                                           
+                            self.response.write(president + "," + vice_president + "," + treasurer + "," + secretary + "," + gen_secretary+ "," + joint_secretary + "," + mtech_secretary)      
 
 
 class CreateVoter(Handler):
@@ -272,15 +272,15 @@ class AddVoter(Handler):
             '''mail.send_mail(sender="anuja2910@gmail.com",
               to=target[0],
               subject="CSEA Election Details",
-              body=message%(target[0], target[1]))'''
-
+              body=message%(target[0], target[1]))'''            
+            
 class ConfirmHandler(Handler):
     def post(self):
         email = self.request.get("email")
         details = UserDetails.query(UserDetails.email == email).fetch(1)
         if details:
             self.response.write(json.dumps({"confirm" : 1,
-                "branch" : details.branch,
+                "branch" : details.branch, 
                 "year" : details.year}))
         else:
             self.response.write(json.dumps({"confirm" : 0}))
@@ -292,7 +292,7 @@ class ThankHandler(Handler):
 class GCMTestHandler(Handler):
     def get(self):
         message = {"head" : "Test",
-                                "message" : "Testing!!"}
+        			"message" : "Testing!!"}
         sendGcmMessage(message,["global"])
 
 class SignupHandler(Handler):
@@ -300,49 +300,45 @@ class SignupHandler(Handler):
         self.render("signup.html")
 class HomeHandler(Handler):
     def get(self):
-        self.render("dashboard.html")
+        self.render("dashboard.html") 
 class RegisterHandler(Handler):
     def post(self):
         token = self.request.get("id")
         name = self.request.get("name")
         email = self.request.get("email")
         group = self.request.get("group")
-        branch = self.request.get("branch")
-        year = self.request.get("year")
 
         existing = UserDetails.query(UserDetails.email == email).fetch(1)
-        if not existing:
+        if not existing:     
             details = UserDetails()
             details.token = token
             details.name = name
             details.email = email
             details.group = group
-            details.branch = branch
-            details.year = year
-            details.put()
-
+            details.put()      
+            
 class PostNewsHandler(Handler):
     def get(self):
         self.render("postNews.html")
     def post(self):
-        details = self.request.get("details")
+        details = self.request.get("details")    
         subject = self.request.get("subject")
         news = News()
         news.subject = subject
-        news.details = details
+        news.details = details 
         news.put()
         upload_url = blobstore.create_upload_url('/upload')
         self.response.set_cookie("subject", subject)
         self.response.set_cookie("type", "news")
         parameter = {"subject": subject, "details": details, "url":upload_url}
         message = {"head" : "News",
-                                "message" :  subject}
+        			"message" :  subject}
         sendGcmMessage(message, ["global"])
         self.render("postNewsImageUpload.html", parameter = parameter)
 
 class NewsSuccessHandler(Handler):
     def get(self):
-        self.render("postNewsSuccess.html")
+        self.render("postNewsSuccess.html")      
 
 class CommunitySuccessHandler(Handler):
     def get(self):
@@ -359,14 +355,14 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
             if subject:
                 news = News.query(News.subject == subject).fetch(1)
                 if news:
-                    news = news[0]
+                    news = news[0]  
                     news.image = str(image)
-                    news.put()
+                    news.put() 
                     self.redirect("/news/success")
                 else:
-                    self.response.write("No database entry could be found for %s"%subject)
+                    self.response.write("No database entry could be found for %s"%subject)            
             else:
-                self.response.write("Switch on cookie and try again!")
+                self.response.write("Switch on cookie and try again!")    
         elif uploadType == "community":
             name = self.request.cookies.get("name", None)
             if name:
@@ -377,23 +373,23 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                     community.put()
                     self.redirect("/community/success")
                 else:
-                    self.response.write("No database entry could be found for %s"%community)
+                    self.response.write("No database entry could be found for %s"%community)                
             else:
-                self.response.write("Switch on cookie and try again!")
+                self.response.write("Switch on cookie and try again!")        
         elif uploadType == "pics":
             pic = Pics()
             caption = self.request.cookies.get("caption")
-            pic.caption = caption
+            pic.caption = caption 
             pic.url = str(image)
             pic.put()
             self.response.write("Picture Uploaded Succesfully!")
         elif uploadType == "files":
             file = File()
             name = self.request.cookies.get("name")
-            file.name = name
+            file.name = name 
             file.url = str(image)
             file.put()
-            self.response.write("File Uploaded Succesfully!")
+            self.response.write("File Uploaded Succesfully!")    
 
 class WallHandler(Handler):
     def get(self):
@@ -412,19 +408,19 @@ class WallHandler(Handler):
         if wall:
             wall = wall[0]
             wall.text = text
-            wall.put()
+            wall.put() 
         else:
             wall = Wall()
             wall.name = "nitg"
             wall.text  = text
             wall.put()
-            self.response.write("")
+            self.response.write("")   
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
-    def get(self, resource):
-        resource = str(urllib.unquote(resource))
-        blob_info = blobstore.BlobInfo.get(resource)
-        self.send_blob(blob_info)
+  def get(self, resource):
+    resource = str(urllib.unquote(resource))
+    blob_info = blobstore.BlobInfo.get(resource)
+    self.send_blob(blob_info)                    
 
 class CommunityHandler(Handler):
     def get(self):
@@ -432,21 +428,21 @@ class CommunityHandler(Handler):
     def post(self):
         name = self.request.get("name")
         about = self.request.get("about")
-        if name and about:
+        if name and about:    
             community = Community()
-            community.name = name
-            community.about = about
+            community.name = name 
+            community.about = about 
             community.put()
             upload_url = blobstore.create_upload_url('/upload')
             self.response.set_cookie("name", name)
-            self.response.set_cookie("type", "community")
+            self.response.set_cookie("type", "community") 
             message = {"head" : "Community",
-                                "message": name + " added."}
+            			"message": name + " added."}
             sendGcmMessage(message, ["global"])
             parameter = {"name": name, "about": about, "url":upload_url}
             self.render("makeCommunityImageUpload.html", parameter = parameter)
         else:
-            self.response.write("Name or About cannot be NULL")
+            self.response.write("Name or About cannot be NULL")    
 class CommunityAppHandler(Handler):
     def get(self):
         communities = Community.query()
@@ -457,7 +453,7 @@ class CommunityAppHandler(Handler):
             data["name"] = community.name
             data["about"] = community.about
             communityResponse.append(data)
-        self.response.write(json.dumps(communityResponse))
+        self.response.write(json.dumps(communityResponse))    
 class NewsAppHandler(Handler):
     def get(self):
         news = News.query()
@@ -468,7 +464,7 @@ class NewsAppHandler(Handler):
             data["subject"] = item.subject
             data["detail"] =  item.details
             newsResponse.append(data)
-        self.response.write(json.dumps(newsResponse))
+        self.response.write(json.dumps(newsResponse))   
 class PicsAppHandler(Handler):
     def get(self):
         picsUrl = []
@@ -478,8 +474,8 @@ class PicsAppHandler(Handler):
             data["url"] = pic.url
             data["caption"] = pic.caption
             picsUrl.append(data)
-        self.response.write(json.dumps(picsUrl))
-
+        self.response.write(json.dumps(picsUrl)) 
+           
 class PicsUploaderHandler(Handler):
     def get(self):
         self.render("picUploader.html")
@@ -488,18 +484,18 @@ class PicsUploaderHandler(Handler):
         if caption:
             self.response.set_cookie("caption", caption)
             self.response.set_cookie("type", "pics")
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload')     
             parameter = {"url" : upload_url, "caption": caption}
             message = {"head" : "Picture",
-                                "message": caption}
+            			"message": caption}
             sendGcmMessage(message, ["global"])
             self.render("picImageUploader.html", parameter = parameter)
         else:
-            self.response.write("Captions cant be empty!")
+            self.response.write("Captions cant be empty!")    
 class TimetableHandler(Handler):
     def get(self):
         self.render("addTimetable.html")
-    def post(self):
+    def post(self):   
         timetable = Timetable()
         branch = self.request.get("branch")
         year = self.request.get("year")
@@ -555,8 +551,8 @@ class TimetableHandler(Handler):
             timetable.friday = friday
             timetable.put()
             self.render("addTimetableSuccess.html")
-        else:
-            self.response.write("Branch or Year or Degree is Null")
+        else: 
+            self.response.write("Branch or Year or Degree is Null")    
 
 class CancelClassHander(Handler):
     def get(self):
@@ -564,48 +560,48 @@ class CancelClassHander(Handler):
         parameter = {"timetables": timetables}
         self.render("cancelClass.html", parameter=parameter)
     def post(self):
-        name = self.request.get("timetableName")
+        name = self.request.get("timetableName") 
         degree, branch, year = name.split("-")
         if name != "":
             timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree, Timetable.year == year).fetch(1)
             if timetable:
                 timetable = timetable[0]
                 parameter = {"timetable" : timetable}
-                self.render("cancelClassTimetable.html", parameter=parameter)
+                self.render("cancelClassTimetable.html", parameter=parameter) 
             else:
                 self.response.write("Cannot find timetable for the selected name")
         else:
-            self.response.write("Invalid name provided")
+            self.response.write("Invalid name provided")                   
 class CancelConfirmHandler(Handler):
     def post(self):
         reason = self.request.get("message")
         classes = self.request.get_all("classesSelected")
         if reason and classes:
             message = {"head" : "Notification",
-                                "message": ",".join(classes)+ " cancelled.\nReason:" + reason}
-            sendGcmMessage(message, ["global"])
+            			"message": ",".join(classes)+ " cancelled.\nReason:" + reason}
+            sendGcmMessage(message, ["global"])    
             self.render("cancelClassSuccess.html")
         else:
-            self.response.write("Failed Kindly enter the message and select classes!")
+            self.response.write("Failed Kindly enter the message and select classes!")    
 
 class TimetableAppHandler(Handler):
     def post(self):
         degree = self.request.get("degree")
-        branch = self.request.get("branch")
+        branch = self.request.get("branch")            
         year = self.request.get("year")
         if degree and branch and year:
             timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree, Timetable.year == year).fetch(1)
-            if timetable:
+            if timetable: 
                 timetable = timetable[0]
                 response = {"timetable":""}
                 response["timetable"] = [{"monday": timetable.monday}, {"tuesday": timetable.tuesay},
-                {"wednesday":timetable.wednesday}, {"thursday":timetable.thursday}, {"friday":timetable.friday}]
+                {"wednesday":timetable.wednesday}, {"thursday":timetable.thursday}, {"friday":timetable.friday}]    
                 self.response.write(json.dumps(response))
             else:
                 self.response.write("{'error': 'no database entry could be found'}")
         else:
             self.response.write("{'error': 'Input parameter arent proper'}")
-
+             
 class AttendanceAppHandler(Handler):
     def get(self):
         students = Attendance.query().fetch(1000) #for testing purpose only! this is shity coding
@@ -636,7 +632,7 @@ class AttendanceAppHandler(Handler):
               )
 
         else:
-            self.response.write("{'error': 'Invalid data'}")
+            self.response.write("{'error': 'Invalid data'}")                        
 class FileAppHandler(Handler):
     def get(self):
         fileNames = File.query().fetch(30)
@@ -646,7 +642,7 @@ class FileAppHandler(Handler):
             data["name"] = fileName.name
             data["url"] = fileName.url
             dataResponse.append(data)
-        self.response.write(json.dumps(dataResponse))
+        self.response.write(json.dumps(dataResponse)) 
 class FileHandler(Handler):
     def get(self):
         self.render("fileUploader.html")
@@ -655,18 +651,18 @@ class FileHandler(Handler):
         if name:
             self.response.set_cookie("name", name)
             self.response.set_cookie("type", "files")
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload')     
             parameter = {"url" : upload_url, "name": name}
             message = {"head" : "File Shared",
-                                "message": name}
+            			"message": name}
             sendGcmMessage(message, ["global"])
             self.render("fileFileUploader.html", parameter = parameter)
         else:
-            self.response.write("Name cannot be empty!")
+            self.response.write("Name cannot be empty!")         
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler), ('/register', RegisterHandler),
-    ('/news/add', PostNewsHandler), ('/upload', UploadHandler), ('/wall', WallHandler), ('/serve/([^/]+)?', ServeHandler), ('/community/add', CommunityHandler),
+    ('/news/add', PostNewsHandler), ('/upload', UploadHandler), ('/wall', WallHandler), ('/serve/([^/]+)?', ServeHandler), ('/community/add', CommunityHandler), 
     ('/app/community', CommunityAppHandler), ('/app/news', NewsAppHandler), ('/pic', PicsUploaderHandler), ('/app/pic', PicsAppHandler), ('/timetable/add', TimetableHandler),
     ('/timetable/cancel', CancelClassHander), ('/timetable/cancel/confirm', CancelConfirmHandler), ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler), ('/app/attendance', AttendanceAppHandler),
