@@ -108,10 +108,12 @@ class RegistrationIds(ndb.Model):
     name = ndb.StringProperty()
 
 class UserDetails(ndb.Model):
-	token = ndb.StringProperty()
-	name = ndb.StringProperty()
-	email = ndb.StringProperty()
-	group = ndb.StringProperty()	
+	token = ndb.StringProperty(required = True)
+	name = ndb.StringProperty(required = True)
+	email = ndb.StringProperty(required = True)
+	group = ndb.StringProperty(required = True)
+    branch = ndb.StringProperty(required = True)
+    year = ndb.StringProperty(required = True)	
 
 class Admin(ndb.Model):
     name = ndb.StringProperty(required= True)
@@ -272,8 +274,16 @@ class AddVoter(Handler):
               subject="CSEA Election Details",
               body=message%(target[0], target[1]))'''            
             
-     
-
+class ConfirmHandler(Handler):
+    def post(self):
+        email = self.request.get("email")
+        details = UserDetails.query(UserDetails.email == email).fetch(1)
+        if details:
+            self.response.write(json.dumps({"confirm" : 1,
+                "branch" : details.branch, 
+                "year" : details.year}))
+        else:
+            self.response.write(json.dumps({"confirm" : 0}))
 
 class ThankHandler(Handler):
     def get(self):
@@ -656,5 +666,5 @@ app = webapp2.WSGIApplication([
     ('/app/community', CommunityAppHandler), ('/app/news', NewsAppHandler), ('/pic', PicsUploaderHandler), ('/app/pic', PicsAppHandler), ('/timetable/add', TimetableHandler),
     ('/timetable/cancel', CancelClassHander), ('/timetable/cancel/confirm', CancelConfirmHandler), ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler), ('/app/attendance', AttendanceAppHandler),
-    ('/app/file', FileAppHandler), ('/file', FileHandler)
+    ('/app/file', FileAppHandler), ('/file', FileHandler),('/confirm',ConfirmHandler)
 ], debug=True)
