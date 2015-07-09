@@ -299,7 +299,7 @@ class RegisterHandler(Handler):
         group = self.request.get("group")
 
         existing = UserDetails.query(UserDetails.email == email).fetch(1)
-        if existing:     
+        if !existing:     
             details = UserDetails()
             details.token = token
             details.name = name
