@@ -298,7 +298,7 @@ class RegisterHandler(Handler):
         email = self.request.get("email")
         group = self.request.get("group")
 
-        if len(id) != 0:     
+        if len(token) != 0:     
             details = UserDetails()
             details.token = token
             details.name = name
