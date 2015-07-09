@@ -298,7 +298,8 @@ class RegisterHandler(Handler):
         email = self.request.get("email")
         group = self.request.get("group")
 
-        if len(token) != 0:     
+        existing = UserDetails.query(UserDetails.email == email).fetch(1)
+        if len(existing) != 0:     
             details = UserDetails()
             details.token = token
             details.name = name
