@@ -715,5 +715,5 @@ app = webapp2.WSGIApplication([
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/app/attendance', AttendanceAppHandler),
-    ('/app/file', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler)
+    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler)
 ], debug=True)
