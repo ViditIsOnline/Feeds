@@ -22,6 +22,7 @@ from urllib2 import Request, urlopen, HTTPError
 import json
 import urllib
 import ast
+import logging
 
 import webapp2
 import jinja2
@@ -29,6 +30,8 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.api import images
+
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
@@ -36,15 +39,15 @@ GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
 letters = string.ascii_letters
 letters = [x for x in letters]
 
-message = """Hello,
-Your voting details are as follows:
-username: %s
-password: %s
-Please login to http://cseaelection.appspot.com to cast your vote.
-Voting Portal will be closed tommorow ie 23/08/2014 at 5 pm.
-Happy Voting
-Connectree Team :-)
-"""
+# message = """Hello,
+# Your voting details are as follows:
+# username: %s
+# password: %s
+# Please login to http://cseaelection.appspot.com to cast your vote.
+# Voting Portal will be closed tommorow ie 23/08/2014 at 5 pm.
+# Happy Voting
+# Connectree Team :-)
+# """
 
 
 def passwordGenerator():
@@ -302,11 +305,12 @@ class MainHandler(Handler):
 class ConfirmHandler(Handler):
     def post(self):
         email = self.request.get("email")
+        logging.debug("Confirm Request from : %s" % str(self.request))
         details = UserDetails.query(UserDetails.email == email).fetch(1)
         if details:
             self.response.write(json.dumps({"confirm": 1,
-                                            "branch": details.branch,
-                                            "year": details.year}))
+                                            "branch": details[0].branch,
+                                            "year": details[0].year}))
         else:
             self.response.write(json.dumps({"confirm": 0}))
 
@@ -365,7 +369,7 @@ class PostNewsHandler(Handler):
         news.subject = subject
         news.details = details
         news.put()
-        upload_url = blobstore.create_upload_url('/upload')
+        upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
         self.response.set_cookie("subject", subject)
         self.response.set_cookie("type", "news")
         parameter = {"subject": subject, "details": details, "url": upload_url}
@@ -390,6 +394,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
         uploadType = self.request.cookies.get("type", None)
         upload_files = self.get_uploads('file')
         image = upload_files[0].key()
+
         if uploadType == "news":
             subject = self.request.cookies.get("subject", None)
             if subject:
@@ -478,7 +483,7 @@ class CommunityHandler(Handler):
             community.name = name
             community.about = about
             community.put()
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
             self.response.set_cookie("name", name)
             self.response.set_cookie("type", "community")
             message = {"head": "Community",
@@ -537,7 +542,7 @@ class PicsUploaderHandler(Handler):
         if caption:
             self.response.set_cookie("caption", caption)
             self.response.set_cookie("type", "pics")
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
             parameter = {"url": upload_url, "caption": caption}
             message = {"head": "Picture",
                        "message": caption}
@@ -694,7 +699,7 @@ class FileHandler(Handler):
         if name:
             self.response.set_cookie("name", name)
             self.response.set_cookie("type", "files")
-            upload_url = blobstore.create_upload_url('/upload')
+            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
             parameter = {"url": upload_url, "name": name}
             message = {"head": "File Shared",
                        "message": name}
