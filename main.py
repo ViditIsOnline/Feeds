@@ -28,12 +28,10 @@ import ast
 import logging
 import webapp2
 import jinja2
-from urllib2 import Request, urlopen, HTTPError
 from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import images
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
@@ -188,12 +186,12 @@ def sendGcmMessage(message, groups):
     for group in groups:
         data = {'data': message,
                 'to': '/topics/' + group}
-        request = Request(GCM_URL, headers=headers, data=json.dumps(data))
+        request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
-            resp = urlopen(request)
+            resp = u2.urlopen(request)
             results = json.loads(resp.read())
             return True
-        except HTTPError as e:
+        except u2.HTTPError as e:
             return False
 
 
@@ -469,7 +467,7 @@ class WallHandler(Handler):
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self, resource):
-        resource = str(urllib.unquote(resource))
+        resource = str(ul.unquote(resource))
         blob_info = blobstore.BlobInfo.get(resource)
         self.send_blob(blob_info)
 
