@@ -14,30 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+import urllib2 as u2
+import urllib as ul
+from lxml import html
+from lxml import etree
 import os
 import hashlib
 import string
 import random
-from urllib2 import Request, urlopen, HTTPError
 import json
-import urllib
 import ast
 import logging
-
 import webapp2
 import jinja2
+from urllib2 import Request, urlopen, HTTPError
 from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import images
 
-
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
 
 letters = string.ascii_letters
 letters = [x for x in letters]
+
 
 # message = """Hello,
 # Your voting details are as follows:
@@ -709,6 +712,43 @@ class FileHandler(Handler):
             self.response.write("Name cannot be empty!")
 
 
+class ResultsHandler(Handler):
+    def post(self):
+        regNo = self.request.get("regNo")
+        data = {"txtRegno": regNo, "hfIdno": 236, "ddlSemester": 6, "__EVENTTARGET": "", "__EVENTARGUMENT": "",
+                "__VIEWSTATE": "/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJWSRUCATABNhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYEAhMPFCsAAg8WBB4LXyFEYXRhQm91bmRnHgtfIUl0ZW1Db3VudAL/////D2RkZAIXDw8WAh4EVGV4dGVkZBgCBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WAwUKYnRuaW1nU2hvdwUQYnRuaW1nU2hvd1Jlc3VsdAUMYnRuaW1nQ2FuY2VsBRBsdlN1YmplY3REZXRhaWxzD2dk",
+                "HiddenField1": "", "btnimgShowResult.x": 39, "btnimgShowResult.y": 4}
+
+        url = "http://www.nitgoa.ac.in/results/"
+
+        request = u2.Request(url=url, data=ul.urlencode(data))
+
+        resp = u2.urlopen(request)
+
+        respText = resp.read()
+
+        tree = html.fromstring(respText)
+
+        semester = 0
+        for i in range(len(tree.xpath("id('ddlSemester')")[0].getchildren())):
+            if len(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()) == 2:
+                semester = int(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()[1])
+
+        data["ddlSemester"] = semester
+
+        url = "http://www.nitgoa.ac.in/results/Default2.aspx"
+
+        request = u2.Request(url=url, data=ul.urlencode(data))
+
+        resp = u2.urlopen(request)
+
+        respText = resp.read()
+
+        tree = html.fromstring(respText)
+
+        self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler),
     ('/register', RegisterHandler),
@@ -720,5 +760,5 @@ app = webapp2.WSGIApplication([
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/app/attendance', AttendanceAppHandler),
-    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler)
+    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
 ], debug=True)
