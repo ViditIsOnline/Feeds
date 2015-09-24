@@ -13,6 +13,8 @@ libraries:
   version: latest
 - name: pycrypto
   version: latest
+- name: lxml
+  version: latest
 
 
 handlers:
