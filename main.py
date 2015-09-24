@@ -637,7 +637,7 @@ class TimetableAppHandler(Handler):
                                         Timetable.year == year).fetch(1)
             if timetable:
                 timetable = timetable[0]
-                response = {"timetable": [{"monday": timetable.monday}, {"tuesday": timetable.tuesay},
+                response = {"timetable": [{"monday": timetable.monday}, {"tuesday": timetable.tuesday},
                                           {"wednesday": timetable.wednesday}, {"thursday": timetable.thursday},
                                           {"friday": timetable.friday}]}
                 self.response.write(json.dumps(response))
