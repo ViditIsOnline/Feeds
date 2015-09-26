@@ -16,7 +16,6 @@ libraries:
 - name: lxml
   version: latest
 
-
 handlers:
 - url: /js/
   static_dir: js/

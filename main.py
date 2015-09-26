@@ -32,9 +32,12 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
+from oauth2client import client, crypt
+
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
+WEB_CLIENT_ID = "175731938341-240t3vrm416e74re74t35mfs0c4bo5o7.apps.googleusercontent.com"
 
 letters = string.ascii_letters
 letters = [x for x in letters]
@@ -82,6 +85,7 @@ def valid_pw(name, pw, h):
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
+
 
 
 class News(ndb.Model):
@@ -132,9 +136,7 @@ class UserDetails(ndb.Model):
 
 
 class Admin(ndb.Model):
-    name = ndb.StringProperty(required=True)
-    email = ndb.StringProperty(required=True)
-    password = ndb.StringProperty(required=True)
+    id = ndb.StringProperty(required=True)
 
 
 class Wall(ndb.Model):
@@ -747,6 +749,28 @@ class ResultsHandler(Handler):
         self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
 
 
+class TokenSignInHandler(Handler):
+    # (Receive token by HTTPS POST)
+    def post(self):
+        token = self.request.get("idtoken")
+        try:
+            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
+            # # If multiple clients access the backend server:
+            # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
+            #     raise crypt.AppIdentityError("Unrecognized client.")
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise crypt.AppIdentityError("Wrong issuer.")
+            # if idinfo['hd'] != APPS_DOMAIN_NAME:
+            #     raise crypt.AppIdentityError("Wrong hosted domain.")
+        except crypt.AppIdentityError:
+            # Invalid token
+            pass
+        userid = idinfo['sub']
+        admin = Admin.query(Admin.id == userid).fetch(1)
+        if admin:
+            self.render_str()
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler),
     ('/register', RegisterHandler),
@@ -757,6 +781,6 @@ app = webapp2.WSGIApplication([
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
-    ('/app/attendance', AttendanceAppHandler),
+    ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
 ], debug=True)
