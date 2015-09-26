@@ -7,6 +7,9 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <script src="js/bootstrap.min.js"></script>
     <link href="css/style.css" rel="stylesheet">
+	<meta name="google-signin-scope" content="https://www.googleapis.com/auth/plus.login email">
+    <meta name="google-signin-client_id" content="175731938341-240t3vrm416e74re74t35mfs0c4bo5o7.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>	
 <body>
 	<div class="container">
@@ -17,14 +20,45 @@
 		</div>
 		<div class="row">
 			<div class="col-xs-12">
-				<form class="form-signin">
-			        <h2 class="form-signin-heading">Login</h2>
-			        <label for="inputEmail" class="sr-only">Email address</label>
-			        <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
-			        <label for="inputPassword" class="sr-only">Password</label>
-			        <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
-			        <button class="btn btn-lg btn-primary btn-block nitg-login-button" type="submit">Sign in</button>
-			    </form>
+				<!--<form class="form-signin">-->
+			        <!--<h2 class="form-signin-heading">Login</h2>-->
+			        <!--<label for="inputEmail" class="sr-only">Email address</label>-->
+			        <!--<input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>-->
+			        <!--<label for="inputPassword" class="sr-only">Password</label>-->
+			        <!--<input type="password" id="inputPassword" class="form-control" placeholder="Password" required>-->
+			        <!--<button class="btn btn-lg btn-primary btn-block nitg-login-button" type="submit">Sign in</button>-->
+			    <!--</form>-->
+					<div class="g-signin2 center-block" data-onsuccess="onSignIn" data-theme="dark"></div>
+					<script>
+					  function onSignIn(googleUser) {
+						// Useful data for your client-side scripts:
+						var profile = googleUser.getBasicProfile();
+						console.log("ID: " + profile.getId()); // Don't send this directly to your server!
+						console.log("Name: " + profile.getName());
+						console.log("Image URL: " + profile.getImageUrl());
+						console.log("Email: " + profile.getEmail());
+
+						// The ID token you need to pass to your backend:
+						var id_token = googleUser.getAuthResponse().id_token;
+						console.log("ID Token: " + id_token);
+						var xhr = new XMLHttpRequest();
+						xhr.open('POST', 'https://nitg-app.appspot.com/tokensignin');
+						xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+						xhr.onload = function() {
+						  console.log('Signed in as: ' + xhr.responseText);
+						};
+						xhr.send('idtoken=' + id_token);
+					  };
+					</script>
+				<!--<a href="#" onclick="signOut();">Sign out</a>-->
+				<!--<script>-->
+				  <!--function signOut() {-->
+					<!--var auth2 = gapi.auth2.getAuthInstance();-->
+					<!--auth2.signOut().then(function () {-->
+					  <!--console.log('User signed out.');-->
+					<!--});-->
+				  <!--}-->
+				<!--</script>-->
 			</div>
 		</div>
 	</div>

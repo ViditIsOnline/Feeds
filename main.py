@@ -14,30 +14,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+import urllib2 as u2
+import urllib as ul
+from lxml import html
+from lxml import etree
 import os
 import hashlib
 import string
 import random
-from urllib2 import Request, urlopen, HTTPError
 import json
-import urllib
 import ast
 import logging
-
 import webapp2
 import jinja2
 from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.api import images
+from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
+WEB_CLIENT_ID = "175731938341-240t3vrm416e74re74t35mfs0c4bo5o7.apps.googleusercontent.com"
 
 letters = string.ascii_letters
 letters = [x for x in letters]
+
 
 # message = """Hello,
 # Your voting details are as follows:
@@ -81,6 +85,7 @@ def valid_pw(name, pw, h):
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
+
 
 
 class News(ndb.Model):
@@ -131,9 +136,7 @@ class UserDetails(ndb.Model):
 
 
 class Admin(ndb.Model):
-    name = ndb.StringProperty(required=True)
-    email = ndb.StringProperty(required=True)
-    password = ndb.StringProperty(required=True)
+    id = ndb.StringProperty(required=True)
 
 
 class Wall(ndb.Model):
@@ -185,12 +188,12 @@ def sendGcmMessage(message, groups):
     for group in groups:
         data = {'data': message,
                 'to': '/topics/' + group}
-        request = Request(GCM_URL, headers=headers, data=json.dumps(data))
+        request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
-            resp = urlopen(request)
+            resp = u2.urlopen(request)
             results = json.loads(resp.read())
             return True
-        except HTTPError as e:
+        except u2.HTTPError as e:
             return False
 
 
@@ -466,7 +469,7 @@ class WallHandler(Handler):
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self, resource):
-        resource = str(urllib.unquote(resource))
+        resource = str(ul.unquote(resource))
         blob_info = blobstore.BlobInfo.get(resource)
         self.send_blob(blob_info)
 
@@ -636,7 +639,7 @@ class TimetableAppHandler(Handler):
                                         Timetable.year == year).fetch(1)
             if timetable:
                 timetable = timetable[0]
-                response = {"timetable": [{"monday": timetable.monday}, {"tuesday": timetable.tuesay},
+                response = {"timetable": [{"monday": timetable.monday}, {"tuesday": timetable.tuesday},
                                           {"wednesday": timetable.wednesday}, {"thursday": timetable.thursday},
                                           {"friday": timetable.friday}]}
                 self.response.write(json.dumps(response))
@@ -709,6 +712,65 @@ class FileHandler(Handler):
             self.response.write("Name cannot be empty!")
 
 
+class ResultsHandler(Handler):
+    def post(self):
+        regNo = self.request.get("regNo")
+        data = {"txtRegno": regNo, "hfIdno": 236, "ddlSemester": 6, "__EVENTTARGET": "", "__EVENTARGUMENT": "",
+                "__VIEWSTATE": "/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJWSRUCATABNhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYEAhMPFCsAAg8WBB4LXyFEYXRhQm91bmRnHgtfIUl0ZW1Db3VudAL/////D2RkZAIXDw8WAh4EVGV4dGVkZBgCBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WAwUKYnRuaW1nU2hvdwUQYnRuaW1nU2hvd1Jlc3VsdAUMYnRuaW1nQ2FuY2VsBRBsdlN1YmplY3REZXRhaWxzD2dk",
+                "HiddenField1": "", "btnimgShowResult.x": 39, "btnimgShowResult.y": 4}
+
+        url = "http://www.nitgoa.ac.in/results/"
+
+        request = u2.Request(url=url, data=ul.urlencode(data))
+
+        resp = u2.urlopen(request)
+
+        respText = resp.read()
+
+        tree = html.fromstring(respText)
+
+        semester = 0
+        for i in range(len(tree.xpath("id('ddlSemester')")[0].getchildren())):
+            if len(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()) == 2:
+                semester = int(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()[1])
+
+        data["ddlSemester"] = semester
+
+        url = "http://www.nitgoa.ac.in/results/Default2.aspx"
+
+        request = u2.Request(url=url, data=ul.urlencode(data))
+
+        resp = u2.urlopen(request)
+
+        respText = resp.read()
+
+        tree = html.fromstring(respText)
+
+        self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
+
+
+class TokenSignInHandler(Handler):
+    # (Receive token by HTTPS POST)
+    def post(self):
+        token = self.request.get("idtoken")
+        try:
+            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
+            # # If multiple clients access the backend server:
+            # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
+            #     raise crypt.AppIdentityError("Unrecognized client.")
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise crypt.AppIdentityError("Wrong issuer.")
+            # if idinfo['hd'] != APPS_DOMAIN_NAME:
+            #     raise crypt.AppIdentityError("Wrong hosted domain.")
+        except crypt.AppIdentityError:
+            # Invalid token
+            pass
+        userid = idinfo['sub']
+        admin = Admin.query(Admin.id == userid).fetch(1)
+        if admin:
+            self.render_str()
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler),
     ('/register', RegisterHandler),
@@ -719,6 +781,6 @@ app = webapp2.WSGIApplication([
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
-    ('/app/attendance', AttendanceAppHandler),
-    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler)
+    ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
+    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
 ], debug=True)
