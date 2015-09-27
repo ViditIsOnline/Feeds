@@ -529,7 +529,7 @@ class NewsAppHandler(Handler):
 class PicsAppHandler(Handler):
     def get(self):
         picsUrl = []
-        pics = Pics.query()
+        pics = Pics.query().order(-Pics.timestamp)
         for pic in pics:
             data = {}
             data["url"] = pic.url
