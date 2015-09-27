@@ -32,7 +32,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from oauth2client import client, crypt
+#from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
@@ -85,30 +85,31 @@ def valid_pw(name, pw, h):
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
     details = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
     present = ndb.IntegerProperty(required=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class File(ndb.Model):
     name = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
@@ -119,12 +120,12 @@ class Timetable(ndb.Model):
     wednesday = ndb.PickleProperty(required=True)
     thursday = ndb.PickleProperty(required=True)
     friday = ndb.PickleProperty(required=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
     name = ndb.StringProperty()
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class UserDetails(ndb.Model):
     token = ndb.StringProperty(required=True)
@@ -133,6 +134,7 @@ class UserDetails(ndb.Model):
     group = ndb.StringProperty(required=True)
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
+    
 
 
 class Admin(ndb.Model):
