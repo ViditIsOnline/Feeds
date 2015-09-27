@@ -134,7 +134,7 @@ class UserDetails(ndb.Model):
     group = ndb.StringProperty(required=True)
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
-    
+
 
 
 class Admin(ndb.Model):
@@ -502,7 +502,7 @@ class CommunityHandler(Handler):
 
 class CommunityAppHandler(Handler):
     def get(self):
-        communities = Community.query()
+        communities = Community.query().order(Community.name)
         communityResponse = []
         for community in communities:
             data = {}
@@ -515,7 +515,7 @@ class CommunityAppHandler(Handler):
 
 class NewsAppHandler(Handler):
     def get(self):
-        news = News.query()
+        news = News.query().order(-News.timestamp)
         newsResponse = []
         for item in news:
             data = {}
