@@ -1,5 +1,5 @@
-application: nitg-app
-version: 2
+application: nitg-app-backend
+version: 1
 runtime: python27
 api_version: 1
 threadsafe: yes
