@@ -35,7 +35,7 @@ from google.appengine.ext.webapp import blobstore_handlers
 #from oauth2client import client, crypt
 
 
-API_KEY = "AIzaSyDiTED6ZYPJu2UX_OiCI2XRk5PvXFl2GNc"
+API_KEY = "AIzaSyDAgxN-483Qq8eoj-zcfU0pUH5lSpC_kLQ"
 GCM_URL = "https://gcm-http.googleapis.com/gcm/send"
 WEB_CLIENT_ID = "175731938341-240t3vrm416e74re74t35mfs0c4bo5o7.apps.googleusercontent.com"
 
@@ -202,7 +202,7 @@ def sendGcmMessage(message, groups):
                 'to': '/topics/' + group}
         request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
-            resp = u2.urlopen(request)
+            resp = u2.urlopen(request,timeout=30)
             results = json.loads(resp.read())
             return True
         except u2.HTTPError as e:
