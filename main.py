@@ -88,52 +88,41 @@ def make_pw_hash(name, pw, salt=None):
 def valid_pw(name, pw, salt,  h):
     return h == make_pw_hash(name, pw, salt)
 
-def authenticateUser(selfVal):
-    email = selfVal.request.cookies.get("email", None)
-    hashVal = selfVal.request.cookies.get("qid", None)
-    manager = Manager.query(Manager.email == email).fetch(1)
-    if manager:
-        manager = manager[0]
-        password = manager.password
-        salt = manager.salt
-        if valid_pw(email, password, salt, hashVal):
-            return manager 
-        else:
-            return None 
 
 def scramble(password):
     return password
 
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
-    url = ndb.BlobProperty(required=True)
+    url = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    
+    addedBy = ndb.StringProperty(required=True)
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
     details = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    
+    addedBy = ndb.StringProperty(required=True)
 
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    
+    addedBy = ndb.StringProperty(required=True)
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
     present = ndb.IntegerProperty(required=True)
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
+
 class File(ndb.Model):
     name = ndb.StringProperty(required=True)
-    url = ndb.BlobProperty(required=True)
+    url = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    
+    addedBy = ndb.StringProperty(required=True)
 
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
@@ -145,7 +134,7 @@ class Timetable(ndb.Model):
     thursday = ndb.PickleProperty(required=True)
     friday = ndb.PickleProperty(required=True)
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    
+    addedBy = ndb.StringProperty(required=True)
 
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
@@ -209,31 +198,7 @@ class Handler(webapp2.RequestHandler):
         else:
             self.response.write("not authenticated!")
             return None 
-# def sendGcmMessage(message):
-#     ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch()
-#     idsSend = ids[0].ids
-#     headers= {'Authorization': 'key='+ API_KEY, 'Content-Type': 'application/json'}
-#     data = {'data': {
-#                       "message": "Testing"},
-#             'to': '/topics/global'}
 
-#     url = "https://gcm-http.googleapis.com/gcm/send"
-#     request = Request(url, headers = headers, data = json.dumps(data))
-#     try:
-#         resp = urlopen(request)
-#         results = json.loads(resp.read())
-#         results = results["results"]
-#         ids = ids[0]
-#         newIds = ids.ids
-#         for i in range(len(ids.ids)):
-#             if results[i].get("registration_id", None):
-#                 newIds[i] = results[i]["registration_id"]
-#         newIds = list(set(newIds))
-#         ids.ids = newIds
-#         ids.put()
-#         return True
-#     except HTTPError as e:
-#         return False
 
 def sendGcmMessage(message, groups):
     headers = {'Authorization': 'key=' + API_KEY, 'Content-Type': 'application/json'}
@@ -344,6 +309,10 @@ class PostNewsHandler(Handler):
             news = News()
             news.subject = subject
             news.details = details
+            
+            manager = self.authenticateUser()
+            news.addedBy = manager.email
+
             news.put()
             upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
             self.response.set_cookie("subject", subject)
@@ -354,6 +323,7 @@ class PostNewsHandler(Handler):
             message = {"head": "News",
                        "message": subject}
             sendGcmMessage(message, ["global"])
+
             self.render("postNewsImageUpload.html", parameter=parameter)
 
 
@@ -404,19 +374,23 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
             else:
                 self.response.write("Switch on cookie and try again!")
         elif uploadType == "pics":
-            pic = Pics()
             caption = self.request.cookies.get("caption")
-            pic.caption = caption
-            pic.url = str(image)
-            pic.put()
-            self.response.write("Picture Uploaded Succesfully!")
+            pic = Pics.query(Pics.caption == caption).fetch(1)
+            if pic:
+                pic = pic[0]
+                pic.url = str(image)
+                pic.put()
+                self.response.write("Picture Uploaded Succesfully!")
+            else:
+                self.response.write("No Database entry exist for the given caption!")    
         elif uploadType == "files":
-            file = File()
             name = self.request.cookies.get("name")
-            file.name = name
-            file.url = str(image)
-            file.put()
-            self.response.write("File Uploaded Succesfully!")
+            file = File.query(File.name == name ).fetch(1)
+            if file:
+                file = file[0]
+                file.url = str(image)
+                file.put()
+                self.response.write("File Uploaded Succesfully!")
 
 
 class WallHandler(Handler):
@@ -468,6 +442,10 @@ class CommunityHandler(Handler):
                 community = Community()
                 community.name = name
                 community.about = about
+                
+                manager = self.authenticateUser()
+                community.addedBy = manager.email
+                
                 community.put()
                 upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
                 self.response.set_cookie("name", name)
@@ -530,6 +508,13 @@ class PicsUploaderHandler(Handler):
         if caption:
             self.response.set_cookie("caption", caption)
             self.response.set_cookie("type", "pics")
+            pic = Pics()
+            pic.caption = caption 
+
+            manager = self.authenticateUser()
+            pic.addedBy = manager.email
+
+            pic.put()
             upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
             parameter = {"url": upload_url, "caption": caption}
             message = {"head": "Picture",
@@ -577,6 +562,10 @@ class TimetableHandler(Handler):
                 timetable.wednesday = wednesday
                 timetable.thursday = thursday
                 timetable.friday = friday
+
+                manager = self.authenticateUser()
+                timetable.addedBy = manager.email
+
                 timetable.put()
                 self.render("addTimetableSuccess.html", parameter = parameter)
             else:
@@ -701,11 +690,18 @@ class FileHandler(Handler):
             if name:
                 self.response.set_cookie("name", name)
                 self.response.set_cookie("type", "files")
+                file = File()
+                file.name = name 
+
+                manager = self.authenticateUser()
+                file.addedBy = manager.email
+
+                file.put()
                 upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
                 parameter = {"url": upload_url, "name": name}
                 message = {"head": "File Shared",
                            "message": name}
-                sendGcmMessage(message, ["global"])
+                #sendGcmMessage(message, ["global"])
                 self.render("fileFileUploader.html", parameter=parameter)
             else:
                 self.response.write("Name cannot be empty!")
@@ -759,7 +755,7 @@ class TokenSignInHandler(Handler):
             self.render_str()
 
 class AddManagerHandler(Handler):
-    def get(self):
+    def get(self):  
         parameter = self.getParameter()
         if parameter:
             self.render("addManager.html", parameter = parameter)
@@ -789,6 +785,14 @@ class AddManagerHandler(Handler):
             else:
                 self.response.write("You cant leave any field empty, try again!")    
 
+class ChatHandler(Handler):
+    def get(self):
+        managers = Manager.query().fetch(10)
+        if managers:
+            pupil = []
+            for manager in managers:
+                pupil.append({"name": manager.name, "url":"", "email": manager.email})
+            self.response.write(json.dumps(pupil))    
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/home', HomeHandler),
@@ -802,5 +806,5 @@ app = webapp2.WSGIApplication([
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
-    ('/manager/add', AddManagerHandler)
+    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler)
 ], debug=True)
