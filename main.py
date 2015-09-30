@@ -32,7 +32,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-#from oauth2client import client, crypt
+# from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDAgxN-483Qq8eoj-zcfU0pUH5lSpC_kLQ"
@@ -85,31 +85,34 @@ def valid_pw(name, pw, h):
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
 
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
     details = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
 
 
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
+
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
     present = ndb.IntegerProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
+
 
 class File(ndb.Model):
     name = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
+
 
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
@@ -120,12 +123,14 @@ class Timetable(ndb.Model):
     wednesday = ndb.PickleProperty(required=True)
     thursday = ndb.PickleProperty(required=True)
     friday = ndb.PickleProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
+
 
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
     name = ndb.StringProperty()
-    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
+
 
 class UserDetails(ndb.Model):
     token = ndb.StringProperty(required=True)
@@ -134,7 +139,6 @@ class UserDetails(ndb.Model):
     group = ndb.StringProperty(required=True)
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
-
 
 
 class Admin(ndb.Model):
@@ -192,7 +196,7 @@ def sendGcmMessage(message, groups):
                 'to': '/topics/' + group}
         request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
-            resp = u2.urlopen(request,timeout=30)
+            resp = u2.urlopen(request, timeout=30)
             results = json.loads(resp.read())
             return True
         except u2.HTTPError as e:
@@ -756,14 +760,14 @@ class TokenSignInHandler(Handler):
     def post(self):
         token = self.request.get("idtoken")
         try:
-            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
+            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  # CLIENT_ID)
             # # If multiple clients access the backend server:
             # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
             #     raise crypt.AppIdentityError("Unrecognized client.")
             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
                 raise crypt.AppIdentityError("Wrong issuer.")
-            # if idinfo['hd'] != APPS_DOMAIN_NAME:
-            #     raise crypt.AppIdentityError("Wrong hosted domain.")
+                # if idinfo['hd'] != APPS_DOMAIN_NAME:
+                #     raise crypt.AppIdentityError("Wrong hosted domain.")
         except crypt.AppIdentityError:
             # Invalid token
             pass
@@ -783,6 +787,6 @@ app = webapp2.WSGIApplication([
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
-    ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
+    ('/tokensignin', TokenSignInHandler), ('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
 ], debug=True)
