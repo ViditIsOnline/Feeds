@@ -1,31 +1,19 @@
 #oggpnson 
 #hkhr 
 
+#scraper for a request 
+
 import urllib2 as u2 
 import urllib as ul 
 from lxml import html
 from lxml import etree
-
-
+url = "http://nitg-app.appspot.com/results"
 
 dataFormat = [{"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJJSRUCATABMhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFCkFNSVQgS1VNQVJkZAIHDw8WAh8BBQkxNENTRTEwMDFkZAIJDw8WAh8BBQJJSWRkAgsPDxYCHwEFAUlkZAINDw8WAh8BBQdCLlRlY2guZGQCDw8PFgIfAQUgQ29tcHV0ZXIgU2NpZW5jZSBhbmQgRW5naW5lZXJpbmdkZAITDxQrAAIPFgQeC18hRGF0YUJvdW5kZx4LXyFJdGVtQ291bnQCCWRkZAIVDw8WAh8BBQIyMmRkAhcPDxYCHwFlZGQCGQ8PFgIfAQUCMjFkZAIbDw8WAh8BBQMxNjRkZAIdDw8WAh8BBQQ3LjgxZGQCHw8PFgIfAQUCNDNkZAIhDw8WAh8BBQMzMzFkZAIjDw8WAh8BBQQ3LjcwZGQYAgUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgMFCmJ0bmltZ1Nob3cFEGJ0bmltZ1Nob3dSZXN1bHQFDGJ0bmltZ0NhbmNlbAUQbHZTdWJqZWN0RGV0YWlscw88KwAKAQgCCWQ=", "txtRegno":"14CSE1001", "hfIdno":"448", "ddlSemester": "2", "HiddenField1":"", "btnimgShowResult.x":24, "btnimgShowResult.y":10}, {"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJJVhUCATABNBQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFCkFNSVQgS1VNQVJkZAIHDw8WAh8BBQkxNENTRTEwMDFkZAIJDw8WAh8BBQJJSWRkAgsPDxYCHwEFAUlkZAINDw8WAh8BBQdCLlRlY2guZGQCDw8PFgIfAQUgQ29tcHV0ZXIgU2NpZW5jZSBhbmQgRW5naW5lZXJpbmdkZAITDxQrAAIPFgQeC18hRGF0YUJvdW5kZx4LXyFJdGVtQ291bnQCCWRkZAIVDw8WAh8BBQIyMmRkAhcPDxYCHwFlZGQCGQ8PFgIfAQUCMjFkZAIbDw8WAh8BBQMxNjRkZAIdDw8WAh8BBQQ3LjgxZGQCHw8PFgIfAQUCNDNkZAIhDw8WAh8BBQMzMzFkZAIjDw8WAh8BBQQ3LjcwZGQYAgUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgMFCmJ0bmltZ1Nob3cFEGJ0bmltZ1Nob3dSZXN1bHQFDGJ0bmltZ0NhbmNlbAUQbHZTdWJqZWN0RGV0YWlscw88KwAKAQgCCWQ=", "txtRegno":"13CSE019", "hfIdno":"314", "ddlSemester": "4", "HiddenField1":"", "btnimgShowResult.x":45, "btnimgShowResult.y":9}, {"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJWSRUCATABNhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFDlAgUkVTSE1BIFNBR0FSZGQCBw8PFgIfAQUIMTNDU0UwMTlkZAIJDw8WAh8BBQJJVmRkAgsPDxYCHwEFAklJZGQCDQ8PFgIfAQUHQi5UZWNoLmRkAg8PDxYCHwEFIENvbXB1dGVyIFNjaWVuY2UgYW5kIEVuZ2luZWVyaW5nZGQCEw8UKwACDxYEHgtfIURhdGFCb3VuZGceC18hSXRlbUNvdW50AghkZGQCFQ8PFgIfAQUCMjFkZAIXDw8WAh8BZWRkAhkPDxYCHwEFAjIwZGQCGw8PFgIfAQUDMTc2ZGQCHQ8PFgIfAQUEOC44MGRkAh8PDxYCHwEFAjg0ZGQCIQ8PFgIfAQUDNzg3ZGQCIw8PFgIfAQUEOS4zN2RkGAIFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYDBQpidG5pbWdTaG93BRBidG5pbWdTaG93UmVzdWx0BQxidG5pbWdDYW5jZWwFEGx2U3ViamVjdERldGFpbHMPPCsACgEIAghk", "txtRegno":"12CSE019", "hfIdno":"236", "ddlSemester": "6", "HiddenField1":"", "btnimgShowResult.x":33, "btnimgShowResult.y":14}]
-dataFormat = dataFormat[::-1]
-year = int(regNo[:2])
-index = year%4
-semester = ((index +3)%4)*2#remeber to add one and subtract one to get right results 
 
-data = dataFormat[index]
-data["txtRegno"] = regNo
-
-
-url = "http://www.nitgoa.ac.in/results/Default2.aspx"
-
+data = {"regNo":"14CSE1001"}
 request = u2.Request(url=url, data=ul.urlencode(data))
 
 resp = u2.urlopen(request)
 
-respText = resp.read()
-
-
-tree = html.fromstring(respText)
-print etree.tostring(tree.xpath("id('PnlShowResult')")[0])
+print resp.read()

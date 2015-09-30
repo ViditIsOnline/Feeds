@@ -43,18 +43,20 @@ letters = string.ascii_letters
 letters = [x for x in letters]
 
 #console options for users
-CONSOLE_OPTION = {"Admin":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}], "Journalist":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}], "Faculty": [{"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}], "CommunityLeader": [{"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}]}    
+CONSOLE_OPTION = {"Admin":[{"Name": "Add Manager", "Link":"/manager/add"},{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}], "Journalist":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}], "Faculty": [{"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}], "CommunityLeader": [{"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}]}    
 
 
-# message = """Hello,
-# Your voting details are as follows:
-# username: %s
-# password: %s
-# Please login to http://cseaelection.appspot.com to cast your vote.
-# Voting Portal will be closed tommorow ie 23/08/2014 at 5 pm.
-# Happy Voting
-# Connectree Team :-)
-# """
+
+MANAGER_MESSAGE = """Ola,\nCongratulation!! you are selected as %s for college feed application. Your login details are as follows:
+username: %s
+password: %s
+
+You can login at http://nitg-app.appspot.com.
+
+Best Wishes,
+Tanay Gahlot
+College Feed Team :-)
+"""
 
 
 def passwordGenerator():
@@ -70,40 +72,57 @@ jinja_env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir),
 
 
 def make_salt():
-    return ''.join(random.choice(string.letters) for x in xrange(5))
+    return ''.join(random.choice(string.letters) for x in xrange(15))
 
 
 def make_pw_hash(name, pw, salt=None):
     if not salt:
         salt = make_salt()
-    h = hashlib.sha256(name + pw + salt).hexdigest()
-    return '%s,%s' % (h, salt)
+        h = hashlib.sha256(name + pw + salt).hexdigest()
+        return (h, salt)
+    else:
+        h = hashlib.sha256(name + pw + salt).hexdigest()
+        return h    
 
 
-def valid_pw(name, pw, h):
-    salt = h.split(',')[1]
+def valid_pw(name, pw, salt,  h):
     return h == make_pw_hash(name, pw, salt)
 
+def authenticateUser(selfVal):
+    email = selfVal.request.cookies.get("email", None)
+    hashVal = selfVal.request.cookies.get("qid", None)
+    manager = Manager.query(Manager.email == email).fetch(1)
+    if manager:
+        manager = manager[0]
+        password = manager.password
+        salt = manager.salt
+        if valid_pw(email, password, salt, hashVal):
+            return manager 
+        else:
+            return None 
+
+def scramble(password):
+    return password
 
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    createdBy = ndb.StringProperty(required=True)
+    
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
     details = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    createdBy = ndb.StringProperty(required=True)
+    
 
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    createdBy = ndb.StringProperty(required=True)
+    
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
@@ -114,7 +133,7 @@ class File(ndb.Model):
     name = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    createdBy = ndb.StringProperty(required=True)
+    
 
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
@@ -126,7 +145,7 @@ class Timetable(ndb.Model):
     thursday = ndb.PickleProperty(required=True)
     friday = ndb.PickleProperty(required=True)
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
-    createdBy = ndb.StringProperty(required=True)
+    
 
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
@@ -146,6 +165,7 @@ class Manager(ndb.Model):
     email = ndb.StringProperty(required=True)
     managerType = ndb.StringProperty(required=True)
     password = ndb.StringProperty(required=True)
+    salt = ndb.StringProperty(required=True)
 
 class Admin(ndb.Model):
     id = ndb.StringProperty(required=True)
@@ -168,7 +188,27 @@ class Handler(webapp2.RequestHandler):
         template = jinja_env.get_template(filename)
         self.response.write(template.render(parameter))
 
-
+    def authenticateUser(self):
+        email = self.request.cookies.get("email", None)
+        hashVal = self.request.cookies.get("qid", None)
+        manager = Manager.query(Manager.email == email).fetch(1)
+        if manager:
+            manager = manager[0]
+            password = manager.password
+            salt = manager.salt
+            if valid_pw(email, password, salt, hashVal):
+                return manager 
+            else:
+                return None 
+    def getParameter(self):
+        manager = self.authenticateUser()
+        if manager:
+            options = CONSOLE_OPTION[manager.managerType]
+            parameter = {"options": options}
+            return parameter
+        else:
+            self.response.write("not authenticated!")
+            return None 
 # def sendGcmMessage(message):
 #     ids = RegistrationIds.query(RegistrationIds.name == "nitg").fetch()
 #     idsSend = ids[0].ids
@@ -211,110 +251,30 @@ def sendGcmMessage(message, groups):
 
 class MainHandler(Handler):
     def get(self):
-        # self.render("signin.html")
-        self.render("index.html")
+        manager = self.authenticateUser()
+        if manager:
+            self.redirect("/home")
+        else:    
+            self.render("index.html")
 
     def post(self):
-        emailid = self.request.get("Email")
+        email = self.request.get("email")
         password = self.request.get("password")
-        if emailid and password:
-            admin = Admin.query(Admin.emailid == emailid, Admin.password == password).fetch(1)
-            if admin:
-                self.response.headers.add_header("Set-Cookie", str("email=%s" % (emailid)))
+        if email and password:
+            password = scramble(password)
+            manager = Manager.query(Manager.email == email, Manager.password == password).fetch(1)
+            if manager:
+                manager = manager[0]
+                salt = manager.salt
+                self.response.headers.add_header("Set-Cookie", str("email=%s" % (email)))
                 self.response.headers.add_header("Set-Cookie", str("password=%s" % (passwordGenerator())))
-                self.response.headers.add_header("Set-Cookie", str("qid=%s" % (hashlib.sha256(password).hexdigest())))
-                # self.redirect("/votelist")
+                self.response.headers.add_header("Set-Cookie", str("qid=%s" % (make_pw_hash(email, password, salt))))
+                self.redirect("/home")
             else:
                 self.response.write("Sorry You aint Authorized!!")
 
         else:
             self.response.write("Wrong emailId or password :/")
-
-
-# class VoteHandler(Handler):
-#     def get(self):
-#         email = self.request.cookies.get("email", None)
-#         password = self.request.cookies.get("qid", None)
-#         if email and password:
-#             voter = Voter.query(Voter.emailid == email).fetch(1)
-#             if voter:
-#                 voter = voter[0]
-#                 if password == hashlib.sha256(voter.password).hexdigest():
-#                     if not voter.completed:
-#                         self.render("candidates.html")
-#                     else:
-#                         self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")
-#                 else:
-#                     self.response.write("Haaha and you think it will work!!!")
-#         else:
-#             self.redirect("/")
-#
-#     def post(self):
-#         email = self.request.cookies.get("email", None)
-#         password = self.request.cookies.get("qid", None)
-#         if email and password:
-#             voter = Voter.query(Voter.emailid == email).fetch(1)
-#             if voter:
-#                 voter = voter[0]
-#                 if password == hashlib.sha256(voter.password).hexdigest():
-#                     if not voter.completed:
-#                         president = self.request.get("president")
-#                         vice_president = self.request.get("vice-president")
-#                         treasurer = self.request.get("treasurer")
-#                         secretary = self.request.get("secretary")
-#                         gen_secretary = self.request.get("gen-secretary")
-#                         joint_secretary = self.request.get("joint-secretary")
-#                         mtech_secretary = self.request.get("secretary-mtech")
-#                         if president and vice_president and treasurer and secretary and gen_secretary and
-#                           joint_secretary and mtech_secretary:
-#                             candidates = [president, vice_president, treasurer, secretary, gen_secretary,
-#                                           joint_secretary, mtech_secretary]
-#                             for candidate in candidates:
-#                                 nominee = Nominee.query(Nominee.name == candidate).fetch(1)
-#                                 if nominee:
-#                                     nominee = nominee[0]
-#                                     nominee.noOfVotes += 1
-#                                     voter.completed = True
-#                                     # nominee.put()
-#                                     # voter.put()
-#                                     # self.redirect("/thankYou")
-#                                     self.redirect("/result")
-#                         else:
-#                             self.response.write("Kindly vote for all fields, your vote was rejected!")
-#                     else:
-#                         self.response.write("We know you are over enthusiastic, but we can't let you vote twice!")
-#
-#                         self.response.write(
-#                             president + "," + vice_president + "," + treasurer + "," + secretary + "," +
-#                             gen_secretary + "," + joint_secretary + "," + mtech_secretary)
-
-
-# class CreateVoter(Handler):
-#     def get(self):
-#         fob = open("password.csv")
-#         for line in fob:
-#             target = line.split(",")
-#             voter = Voter()
-#             voter.emailid = target[0]
-#             voter.password = target[1].replace("\n", "").replace(" ", "")
-#             voter.completed = False
-#             # voter.put()
-#
-#
-# class AddVoter(Handler):
-#     def get(self):
-#         fob = open("passwordLeftout.csv")
-#         for line in fob:
-#             target = line.split(",")
-#             voter = Voter()
-#             voter.emailid = target[0]
-#             voter.password = target[1].replace("\n", "").replace(" ", "")
-#             voter.completed = False
-#             # voter.put()
-#             '''mail.send_mail(sender="anuja2910@gmail.com",
-#               to=target[0],
-#               subject="CSEA Election Details",
-#               body=message%(target[0], target[1]))'''
 
 
 class ConfirmHandler(Handler):
@@ -342,14 +302,11 @@ class GCMTestHandler(Handler):
         sendGcmMessage(message, ["global"])
 
 
-class SignupHandler(Handler):
-    def get(self):
-        self.render("signup.html")
-
-
 class HomeHandler(Handler):
     def get(self):
-        self.render("dashboard.html")
+        parameter = self.getParameter()
+        if parameter: 
+            self.render("dashboard.html", parameter = parameter)
 
 
 class RegisterHandler(Handler):
@@ -375,33 +332,43 @@ class RegisterHandler(Handler):
 
 class PostNewsHandler(Handler):
     def get(self):
-        self.render("postNews.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("postNews.html", parameter = parameter)
 
     def post(self):
-        details = self.request.get("details")
-        subject = self.request.get("subject")
-        news = News()
-        news.subject = subject
-        news.details = details
-        news.put()
-        upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
-        self.response.set_cookie("subject", subject)
-        self.response.set_cookie("type", "news")
-        parameter = {"subject": subject, "details": details, "url": upload_url}
-        message = {"head": "News",
-                   "message": subject}
-        sendGcmMessage(message, ["global"])
-        self.render("postNewsImageUpload.html", parameter=parameter)
+        parameter = self.getParameter()
+        if parameter:
+            details = self.request.get("details")
+            subject = self.request.get("subject")
+            news = News()
+            news.subject = subject
+            news.details = details
+            news.put()
+            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
+            self.response.set_cookie("subject", subject)
+            self.response.set_cookie("type", "news")
+            parameter["subject"] = subject 
+            parameter["details"] = details 
+            parameter["url"] = upload_url
+            message = {"head": "News",
+                       "message": subject}
+            sendGcmMessage(message, ["global"])
+            self.render("postNewsImageUpload.html", parameter=parameter)
 
 
 class NewsSuccessHandler(Handler):
     def get(self):
-        self.render("postNewsSuccess.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("postNewsSuccess.html", parameter = parameter)
 
 
 class CommunitySuccessHandler(Handler):
     def get(self):
-        self.render("makeCommunitySuccess.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("makeCommunitySuccess.html", parameter = parameter)
 
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
@@ -488,26 +455,32 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 
 class CommunityHandler(Handler):
     def get(self):
-        self.render("makeCommunity.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("makeCommunity.html", parameter= parameter)
 
     def post(self):
-        name = self.request.get("name")
-        about = self.request.get("about")
-        if name and about:
-            community = Community()
-            community.name = name
-            community.about = about
-            community.put()
-            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
-            self.response.set_cookie("name", name)
-            self.response.set_cookie("type", "community")
-            message = {"head": "Community",
-                       "message": name + " added."}
-            sendGcmMessage(message, ["global"])
-            parameter = {"name": name, "about": about, "url": upload_url}
-            self.render("makeCommunityImageUpload.html", parameter=parameter)
-        else:
-            self.response.write("Name or About cannot be NULL")
+        parameter = self.getParameter()
+        if parameter:
+            name = self.request.get("name")
+            about = self.request.get("about")
+            if name and about:
+                community = Community()
+                community.name = name
+                community.about = about
+                community.put()
+                upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
+                self.response.set_cookie("name", name)
+                self.response.set_cookie("type", "community")
+                message = {"head": "Community",
+                           "message": name + " added."}
+                sendGcmMessage(message, ["global"])
+                parameter["name"] = name 
+                parameter["about"] = about
+                parameter["url"] = upload_url
+                self.render("makeCommunityImageUpload.html", parameter=parameter)
+            else:
+                self.response.write("Name or About cannot be NULL")
 
 
 class CommunityAppHandler(Handler):
@@ -547,7 +520,7 @@ class PicsAppHandler(Handler):
             picsUrl.append(data)
         self.response.write(json.dumps(picsUrl))
 
-
+#needs work on html 
 class PicsUploaderHandler(Handler):
     def get(self):
         self.render("picUploader.html")
@@ -569,76 +542,86 @@ class PicsUploaderHandler(Handler):
 
 class TimetableHandler(Handler):
     def get(self):
-        self.render("addTimetable.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("addTimetable.html", parameter = parameter)
 
     def post(self):
-        timetable = Timetable()
-        branch = self.request.get("branch")
-        year = self.request.get("year")
-        degree = self.request.get("degree")
-        if degree and year and branch:
-            timetable.branch = branch
-            timetable.year = year
-            timetable.degree = degree
-            monday = [self.request.get("monday1"), self.request.get("monday2"), self.request.get("monday3"),
-                      self.request.get("monday4"), self.request.get("monday5"), self.request.get("monday6"),
-                      self.request.get("monday7")]
-            tuesday = [self.request.get("tuesday1"), self.request.get("tuesday2"), self.request.get("tuesday3"),
-                       self.request.get("tuesday4"), self.request.get("tuesday5"), self.request.get("tuesday6"),
-                       self.request.get("tuesday7")]
-            wednesday = [self.request.get("wednesday1"), self.request.get("wednesday2"), self.request.get("wednesday3"),
-                         self.request.get("wednesday4"), self.request.get("wednesday5"), self.request.get("wednesday6"),
-                         self.request.get("wednesday7")]
-            thursday = [self.request.get("thursday1"), self.request.get("thursday2"), self.request.get("thursday3"),
-                        self.request.get("thursday4"), self.request.get("thursday5"), self.request.get("thursday6"),
-                        self.request.get("thursday7")]
-            friday = [self.request.get("friday1"), self.request.get("friday2"), self.request.get("friday3"),
-                      self.request.get("friday4"), self.request.get("friday5"), self.request.get("friday6"),
-                      self.request.get("friday7")]
-            timetable.monday = monday
-            timetable.tuesday = tuesday
-            timetable.wednesday = wednesday
-            timetable.thursday = thursday
-            timetable.friday = friday
-            timetable.put()
-            self.render("addTimetableSuccess.html")
-        else:
-            self.response.write("Branch or Year or Degree is Null")
+        parameter = self.getParameter()
+        if parameter:
+            timetable = Timetable()
+            branch = self.request.get("branch")
+            year = self.request.get("year")
+            degree = self.request.get("degree")
+            if degree and year and branch:
+                timetable.branch = branch
+                timetable.year = year
+                timetable.degree = degree
+                monday = [self.request.get("monday1"), self.request.get("monday2"), self.request.get("monday3"),
+                          self.request.get("monday4"), self.request.get("monday5"), self.request.get("monday6"),
+                          self.request.get("monday7")]
+                tuesday = [self.request.get("tuesday1"), self.request.get("tuesday2"), self.request.get("tuesday3"),
+                           self.request.get("tuesday4"), self.request.get("tuesday5"), self.request.get("tuesday6"),
+                           self.request.get("tuesday7")]
+                wednesday = [self.request.get("wednesday1"), self.request.get("wednesday2"), self.request.get("wednesday3"),
+                             self.request.get("wednesday4"), self.request.get("wednesday5"), self.request.get("wednesday6"),
+                             self.request.get("wednesday7")]
+                thursday = [self.request.get("thursday1"), self.request.get("thursday2"), self.request.get("thursday3"),
+                            self.request.get("thursday4"), self.request.get("thursday5"), self.request.get("thursday6"),
+                            self.request.get("thursday7")]
+                friday = [self.request.get("friday1"), self.request.get("friday2"), self.request.get("friday3"),
+                          self.request.get("friday4"), self.request.get("friday5"), self.request.get("friday6"),
+                          self.request.get("friday7")]
+                timetable.monday = monday
+                timetable.tuesday = tuesday
+                timetable.wednesday = wednesday
+                timetable.thursday = thursday
+                timetable.friday = friday
+                timetable.put()
+                self.render("addTimetableSuccess.html", parameter = parameter)
+            else:
+                self.response.write("Branch or Year or Degree is Null")
 
 
 class CancelClassHandler(Handler):
     def get(self):
-        timetables = Timetable.query().fetch(30)
-        parameter = {"timetables": timetables}
-        self.render("cancelClass.html", parameter=parameter)
+        parameter = self.getParameter()
+        if parameter:
+            timetables = Timetable.query().fetch(30)
+            parameter["timetables"] = timetables
+            self.render("cancelClass.html", parameter=parameter)
 
     def post(self):
-        name = self.request.get("timetableName")
-        degree, branch, year = name.split("-")
-        if name != "":
-            timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree,
-                                        Timetable.year == year).fetch(1)
-            if timetable:
-                timetable = timetable[0]
-                parameter = {"timetable": timetable}
-                self.render("cancelClassTimetable.html", parameter=parameter)
+        parameter = self.getParameter()
+        if parameter:
+            name = self.request.get("timetableName")
+            degree, branch, year = name.split("-")
+            if name != "":
+                timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree,
+                                            Timetable.year == year).fetch(1)
+                if timetable:
+                    timetable = timetable[0]
+                    parameter["timetable"] = timetable
+                    self.render("cancelClassTimetable.html", parameter=parameter)
+                else:
+                    self.response.write("Cannot find timetable for the selected name")
             else:
-                self.response.write("Cannot find timetable for the selected name")
-        else:
-            self.response.write("Invalid name provided")
+                self.response.write("Invalid name provided")
 
 
 class CancelConfirmHandler(Handler):
     def post(self):
-        reason = self.request.get("message")
-        classes = self.request.get_all("classesSelected")
-        if reason and classes:
-            message = {"head": "Notification",
-                       "message": ",".join(classes) + " cancelled.\nReason:" + reason}
-            sendGcmMessage(message, ["global"])
-            self.render("cancelClassSuccess.html")
-        else:
-            self.response.write("Failed Kindly enter the message and select classes!")
+        parameter = self.getParameter()
+        if parameter:
+            reason = self.request.get("message")
+            classes = self.request.get_all("classesSelected")
+            if reason and classes:
+                message = {"head": "Notification",
+                           "message": ",".join(classes) + " cancelled.\nReason:" + reason}
+                sendGcmMessage(message, ["global"])
+                self.render("cancelClassSuccess.html", parameter = parameter)
+            else:
+                self.response.write("Failed Kindly enter the message and select classes!")
 
 
 class TimetableAppHandler(Handler):
@@ -704,24 +687,28 @@ class FileAppHandler(Handler):
             dataResponse.append(data)
         self.response.write(json.dumps(dataResponse))
 
-
+#needs work here, gotta integrate it 
 class FileHandler(Handler):
     def get(self):
-        self.render("fileUploader.html")
+        parameter = self.getParameter()
+        if parameter:
+            self.render("fileUploader.html")
 
     def post(self):
-        name = self.request.get("name")
-        if name:
-            self.response.set_cookie("name", name)
-            self.response.set_cookie("type", "files")
-            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
-            parameter = {"url": upload_url, "name": name}
-            message = {"head": "File Shared",
-                       "message": name}
-            sendGcmMessage(message, ["global"])
-            self.render("fileFileUploader.html", parameter=parameter)
-        else:
-            self.response.write("Name cannot be empty!")
+        parameter = self.getParameter()
+        if parameter:
+            name = self.request.get("name")
+            if name:
+                self.response.set_cookie("name", name)
+                self.response.set_cookie("type", "files")
+                upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
+                parameter = {"url": upload_url, "name": name}
+                message = {"head": "File Shared",
+                           "message": name}
+                sendGcmMessage(message, ["global"])
+                self.render("fileFileUploader.html", parameter=parameter)
+            else:
+                self.response.write("Name cannot be empty!")
 
 
 class ResultsHandler(Handler):
@@ -750,7 +737,6 @@ class ResultsHandler(Handler):
         tree = html.fromstring(respText)
         self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
 
-
 class TokenSignInHandler(Handler):
     # (Receive token by HTTPS POST)
     def post(self):
@@ -772,17 +758,49 @@ class TokenSignInHandler(Handler):
         if admin:
             self.render_str()
 
+class AddManagerHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            self.render("addManager.html", parameter = parameter)
+    def post(self):
+        parameter = self.getParameter()
+        if parameter:            
+            email = self.request.get("email")
+            name = self.request.get("name")
+            managerType = self.request.get("managerType")
+            password = passwordGenerator()
+            salt = make_salt()
+            
+            if email and name and managerType and password:
+                manager = Manager()
+                manager.email = email
+                manager.password = scramble(password)
+                manager.name = name 
+                manager.managerType = managerType
+                manager.salt = salt
+                manager.put()
+
+                mail.send_mail(sender="tanaygahlot@gmail.com",
+                  to=email,
+                  subject="College Feed Login Details",
+                  body=MANAGER_MESSAGE%(managerType, email, password))
+                self.render("addManagerSuccess.html", parameter = parameter)
+            else:
+                self.response.write("You cant leave any field empty, try again!")    
+
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler), ('/gcm', GCMTestHandler), ('/signup', SignupHandler), ('/home', HomeHandler),
+    ('/', MainHandler), ('/gcm', GCMTestHandler), ('/home', HomeHandler),
     ('/register', RegisterHandler),
     ('/news/add', PostNewsHandler), ('/upload', UploadHandler), ('/wall', WallHandler),
     ('/serve/([^/]+)?', ServeHandler), ('/community/add', CommunityHandler),
-    ('/app/community', CommunityAppHandler), ('/app/news', NewsAppHandler), ('/pic', PicsUploaderHandler),
+    ('/app/community', CommunityAppHandler), ('/app/news', NewsAppHandler), ('/pics/add', PicsUploaderHandler),
     ('/app/pic', PicsAppHandler), ('/timetable/add', TimetableHandler),
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
-    ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
+    ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
+    ('/manager/add', AddManagerHandler)
 ], debug=True)
