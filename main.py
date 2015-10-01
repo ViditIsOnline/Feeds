@@ -43,7 +43,7 @@ letters = string.ascii_letters
 letters = [x for x in letters]
 
 #console options for users
-CONSOLE_OPTION = {"Admin":[{"Name": "Add Manager", "Link":"/manager/add"},{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}], "Journalist":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}], "Faculty": [{"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}], "CommunityLeader": [{"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}]}    
+CONSOLE_OPTION = {"Admin":[{"Name": "Add Manager", "Link":"/manager/add"},{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Schedule Extra Classes", "Link":"/timetable/schedule"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}], "Journalist":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}], "Faculty": [ {"Name": "Schedule Extra Classes", "Link":"/timetable/schedule"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}], "CommunityLeader": [{"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}]}    
 
 
 
@@ -201,6 +201,7 @@ class Handler(webapp2.RequestHandler):
 
 
 def sendGcmMessage(message, groups):
+    #pass
     headers = {'Authorization': 'key=' + API_KEY, 'Content-Type': 'application/json'}
     for group in groups:
         data = {'data': message,
@@ -380,7 +381,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                 pic = pic[0]
                 pic.url = str(image)
                 pic.put()
-                self.response.write("Picture Uploaded Succesfully!")
+                self.redirect("/pics/success")
             else:
                 self.response.write("No Database entry exist for the given caption!")    
         elif uploadType == "files":
@@ -390,7 +391,9 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                 file = file[0]
                 file.url = str(image)
                 file.put()
-                self.response.write("File Uploaded Succesfully!")
+                self.redirect("/file/success")
+            else:
+                self.response.write("No Database entry exist for the given caption!")        
 
 
 class WallHandler(Handler):
@@ -572,6 +575,9 @@ class TimetableHandler(Handler):
                 self.response.write("Branch or Year or Degree is Null")
 
 
+
+
+
 class CancelClassHandler(Handler):
     def get(self):
         parameter = self.getParameter()
@@ -591,12 +597,92 @@ class CancelClassHandler(Handler):
                 if timetable:
                     timetable = timetable[0]
                     parameter["timetable"] = timetable
+
                     self.render("cancelClassTimetable.html", parameter=parameter)
                 else:
                     self.response.write("Cannot find timetable for the selected name")
             else:
                 self.response.write("Invalid name provided")
 
+class TimetableEditSubmitHandler(Handler):
+    def post(self):
+        parameter = self.getParameter()
+        if parameter:
+            branch = self.request.cookies.get("branch")
+            year = self.request.cookies.get("year")
+            degree = self.request.cookies.get("degree")
+            timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree,
+                                            Timetable.year == year).fetch(1)
+            if timetable:
+                timetable = timetable[0]
+                classes = timetable.monday
+                for i in xrange(7):
+                    lecture = self.request.get("monday"+str(i+1))
+                    if lecture:
+                        classes[i] = lecture
+                timetable.monday = classes        
+
+                classes = timetable.tuesday
+                for i in xrange(7):
+                    lecture = self.request.get("tuesday"+str(i+1))
+                    if lecture:
+                        classes[i] = lecture
+                timetable.tuesday = classes   
+
+                classes = timetable.wednesday
+                for i in xrange(7):
+                    lecture = self.request.get("wednesday"+str(i+1))
+                    if lecture:
+                        classes[i] = lecture
+                timetable.wednesday = classes 
+
+                classes = timetable.thursday
+                for i in xrange(7):
+                    lecture = self.request.get("thursday"+str(i+1))
+                    if lecture:
+                        classes[i] = lecture
+                timetable.thursday = classes
+
+                classes = timetable.friday
+                for i in xrange(7):
+                    lecture = self.request.get("friday"+str(i+1))
+                    if lecture:
+                        classes[i] = lecture
+                timetable.friday = classes
+
+                timetable.put()  
+
+                self.render("editTimetableSuccess.html", parameter = parameter)                              
+        else:
+            self.response.write("You aint authorized")            
+
+
+class EditTimetableHomeHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            timetables = Timetable.query().fetch(30)
+            parameter["timetables"] = timetables
+            self.render("editTimetableHome.html", parameter=parameter)
+    def post(self):
+        parameter = self.getParameter()
+        if parameter:
+            name = self.request.get("timetableName")
+            degree, branch, year = name.split("-")
+            if name != "":
+                timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree,
+                                            Timetable.year == year).fetch(1)
+                if timetable:
+                    timetable = timetable[0]
+                    self.response.set_cookie("branch", branch)
+                    self.response.set_cookie("year", year)
+                    self.response.set_cookie("degree", degree)
+                    parameter["timetable"] = timetable
+                    self.render("editTimetableEditor.html", parameter=parameter)
+                else:
+                    self.response.write("Cannot find timetable for the selected name")
+            else:
+                self.response.write("Invalid name provided")
 
 class CancelConfirmHandler(Handler):
     def post(self):
@@ -612,6 +698,46 @@ class CancelConfirmHandler(Handler):
             else:
                 self.response.write("Failed Kindly enter the message and select classes!")
 
+class ScheduleConfirmHandler(Handler):
+    def post(self):
+        parameter = self.getParameter()
+        if parameter:
+            reason = self.request.get("message")
+            classes = self.request.get_all("classesSelected")
+            if reason and classes:
+                message = {"head": "Notification",
+                           "message": ",".join(classes) + " scheduled.\nReason:" + reason}
+                sendGcmMessage(message, ["global"])
+                self.render("classScheduledSuccess.html", parameter = parameter)
+            else:
+                self.response.write("Failed Kindly enter the message and select classes!")
+
+
+class ScheduleClassHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            timetables = Timetable.query().fetch(30)
+            parameter["timetables"] = timetables
+            self.render("scheduleClass.html", parameter=parameter)
+
+    def post(self):
+        parameter = self.getParameter()
+        if parameter:
+            name = self.request.get("timetableName")
+            degree, branch, year = name.split("-")
+            if name != "":
+                timetable = Timetable.query(Timetable.branch == branch, Timetable.degree == degree,
+                                            Timetable.year == year).fetch(1)
+                if timetable:
+                    timetable = timetable[0]
+                    parameter["timetable"] = timetable
+
+                    self.render("scheduleClassTimetable.html", parameter=parameter)
+                else:
+                    self.response.write("Cannot find timetable for the selected name")
+            else:
+                self.response.write("Invalid name provided")
 
 class TimetableAppHandler(Handler):
     def post(self):
@@ -794,6 +920,214 @@ class ChatHandler(Handler):
                 pupil.append({"name": manager.name, "url":"", "email": manager.email})
             self.response.write(json.dumps(pupil))    
 
+class PicsSuccessHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            self.render("picUploaderSuccess.html", parameter = parameter)
+
+class FileSuccessHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            self.render("fileUploaderSuccess.html", parameter = parameter)
+
+class LogoutHandler(Handler):
+    def get(self):
+        self.response.headers.add_header("Set-Cookie", str("email=%s" % ("")))
+        self.response.headers.add_header("Set-Cookie", str("password=%s" % (passwordGenerator())))
+        self.response.headers.add_header("Set-Cookie", str("qid=%s" % ("")))
+        self.redirect("/")
+
+class EditNewsHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            news = News.query(News.addedBy == email).order(-News.timestamp).fetch(20)
+            parameter["news"] = news
+            self.render("editNewsHome.html", parameter = parameter)
+
+class EditCommunityHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            community = Community.query(Community.addedBy == email).order(-Community.timestamp).fetch(20)
+            parameter["communities"] = community
+            self.render("editCommunityHome.html", parameter = parameter)
+
+
+class EditNewsEditorHandler(Handler):
+    def get(self, key):
+        parameter = self.getParameter()
+        if parameter:
+            if key:
+                key = ndb.Key(urlsafe=key)
+                news = key.get()
+                parameter["news"] = news
+                self.render("editNewsEditor.html", parameter = parameter)
+            else:
+                self.response.write("Invalid key")    
+        else:
+            self.response.write("Not authenticated")                 
+    def post(self, key):
+        parameter = self.getParameter()
+        if parameter:
+            if key:
+                key = ndb.Key(urlsafe=key)
+                news = key.get()
+                details = self.request.get("details")
+                subject = self.request.get("subject")
+                if subject:
+                    news.subject = subject
+                else:    
+                    news.subject = news.subject
+                    subject = news.subject
+
+                news.details = details
+                
+                news.put()
+                upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
+                self.response.set_cookie("subject", subject)
+                self.response.set_cookie("type", "news")
+                parameter["subject"] = subject 
+                parameter["details"] = details 
+                parameter["url"] = upload_url
+
+                self.render("postNewsImageUpload.html", parameter=parameter)
+
+class EditCommunityEditorHandler(Handler):
+    def get(self, key):
+        parameter = self.getParameter()
+        if parameter:
+            if key:
+                key = ndb.Key(urlsafe=key)
+                community = key.get()
+                parameter["community"] = community
+                self.render("editCommunityEditor.html", parameter = parameter)
+            else:
+                self.response.write("Invalid key")    
+        else:
+            self.response.write("Not authenticated")                 
+    def post(self, key):
+        parameter = self.getParameter()
+        if parameter and key:
+            name = self.request.get("name")
+            about = self.request.get("about")
+            
+            key = ndb.Key(urlsafe = key)
+            community = key.get()
+            if name:
+                community.name = name
+            else:
+                community.name = community.name  
+                name = community.name 
+
+            community.about = about
+            
+            manager = self.authenticateUser()
+            community.addedBy = manager.email
+            
+            community.put()
+            upload_url = blobstore.create_upload_url('/upload', max_bytes_per_blob=2000000)
+            self.response.set_cookie("name", name)
+            self.response.set_cookie("type", "community")
+            parameter["name"] = name 
+            parameter["about"] = about
+            parameter["url"] = upload_url
+            self.render("makeCommunityImageUpload.html", parameter=parameter)
+        
+
+class DeleteNewsHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            news = News.query(News.addedBy == email).order(-News.timestamp).fetch(20)
+            parameter["news"] = news
+            self.render("deleteNewsHome.html", parameter = parameter)
+
+class DeleteCommunityHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            communities = Community.query(Community.addedBy == email).order(-Community.timestamp).fetch(20)
+            parameter["communities"] = communities
+            self.render("deleteCommunityHome.html", parameter = parameter)
+
+
+class DeleteNewsActualHandler(Handler):
+    def get(self, key):
+        manager = self.authenticateUser()
+        key = ndb.Key(urlsafe=key)
+        news = key.get()
+        if key and news.addedBy == manager.email:
+            parameter = self.getParameter()        
+            key.delete()
+            self.render("deleteNewsSuccess.html", parameter = parameter)
+        else:
+            self.response.write("You aint authorized to perform this operation")    
+
+class DeleteCommunityActualHandler(Handler):
+    def get(self, key):
+        manager = self.authenticateUser()
+        key = ndb.Key(urlsafe=key)
+        community = key.get()
+        if key and community.addedBy == manager.email:
+            parameter = self.getParameter()        
+            key.delete()
+            self.render("deleteCommunitySuccess.html", parameter = parameter)
+        else:
+            self.response.write("You aint authorized to perform this operation")    
+
+class PicsDeleteHomeHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            pics = Pics.query(Pics.addedBy == email).order(-Pics.timestamp).fetch(20)
+            parameter["pics"] = pics
+            self.render("deletePicHome.html", parameter = parameter)
+
+class DeletePicsActualHandler(Handler):
+    def get(self, key):
+        parameter = self.getParameter()
+        if parameter and key:
+            key = ndb.Key(urlsafe = key)
+            key.delete()
+            self.render("DeletePicSuccess.html", parameter = parameter)
+        else:
+            self.response.write("You Aint authorized!")    
+
+class FileDeleteHomeHandler(Handler):
+    def get(self):
+        parameter = self.getParameter()
+        if parameter:
+            manager = self.authenticateUser()
+            email = manager.email
+            files = File.query(File.addedBy == email).order(-File.timestamp).fetch(20)
+            parameter["files"] = files
+            self.render("fileDeleteHome.html", parameter = parameter)
+
+class DeleteFileActualHandler(Handler):
+    def get(self, key):
+        parameter = self.getParameter()
+        if parameter and key:
+            key = ndb.Key(urlsafe = key)
+            key.delete()
+            self.render("DeleteFileSuccess.html", parameter = parameter)
+        else:
+            self.response.write("You Aint authorized!")    
+
+
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler), ('/gcm', GCMTestHandler), ('/home', HomeHandler),
     ('/register', RegisterHandler),
@@ -806,5 +1140,12 @@ app = webapp2.WSGIApplication([
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
-    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler)
+    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler), ('/pics/success', PicsSuccessHandler), ('/file/success', FileSuccessHandler)
+    ,('/logout', LogoutHandler), ('/news/edit', EditNewsHandler), ('/news/edit/([^/]+)?', EditNewsEditorHandler),
+    ('/news/delete', DeleteNewsHandler), ('/news/delete/([^/]+)?', DeleteNewsActualHandler), 
+    ('/community/edit', EditCommunityHandler), ('/community/edit/([^/]+)?', EditCommunityEditorHandler)
+    ,('/community/delete', DeleteCommunityHandler), ('/community/delete/([^/]+)?', DeleteCommunityActualHandler), 
+    ('/timetable/edit', EditTimetableHomeHandler), ('/timetable/edit/submit', TimetableEditSubmitHandler), ('/timetable/schedule', ScheduleClassHandler),
+    ('/timetable/schedule/confirm', ScheduleConfirmHandler), ('/pics/delete', PicsDeleteHomeHandler), ('/pics/delete/([^/]+)?', DeletePicsActualHandler),
+    ('/file/delete', FileDeleteHomeHandler), ('/file/delete/([^/]+)?', DeleteFileActualHandler)
 ], debug=True)
