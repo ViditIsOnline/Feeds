@@ -32,7 +32,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-# from oauth2client import client, crypt
+#from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDAgxN-483Qq8eoj-zcfU0pUH5lSpC_kLQ"
@@ -41,6 +41,9 @@ WEB_CLIENT_ID = "175731938341-240t3vrm416e74re74t35mfs0c4bo5o7.apps.googleuserco
 
 letters = string.ascii_letters
 letters = [x for x in letters]
+
+#console options for users
+CONSOLE_OPTION = {"Admin":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}], "Journalist":[{"Name": "Post News", "Link":"/news/add"}, {"Name": "Edit News", "Link":"/news/edit"}, {"Name": "Delete News", "Link":"/news/delete"}, {"Name": "Add Timetable", "Link":"/timetable/add"}, {"Name": "Edit Timetable", "Link":"/timetable/edit"}, {"Name": "Add Pics", "Link":"/pics/add"},  {"Name": "Delete Pics", "Link":"/pics/delete"}], "Faculty": [{"Name": "Cancel Classes", "Link":"/timetable/cancel"}, {"Name": "Add File", "Link":"/file/add"}, {"Name": "Delete File", "Link":"/file/delete"}, {"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}], "CommunityLeader": [{"Name": "Add Community", "Link":"/community/add"}, {"Name": "Edit Community", "Link":"/community/edit"}, {"Name": "Delete Community", "Link":"/community/delete"}]}    
 
 
 # message = """Hello,
@@ -85,34 +88,33 @@ def valid_pw(name, pw, h):
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    createdBy = ndb.StringProperty(required=True)
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
     details = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    createdBy = ndb.StringProperty(required=True)
 
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    createdBy = ndb.StringProperty(required=True)
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
     present = ndb.IntegerProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class File(ndb.Model):
     name = ndb.StringProperty(required=True)
     url = ndb.BlobProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    createdBy = ndb.StringProperty(required=True)
 
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
@@ -123,14 +125,13 @@ class Timetable(ndb.Model):
     wednesday = ndb.PickleProperty(required=True)
     thursday = ndb.PickleProperty(required=True)
     friday = ndb.PickleProperty(required=True)
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+    createdBy = ndb.StringProperty(required=True)
 
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
     name = ndb.StringProperty()
-    timestamp = ndb.DateTimeProperty(required=True, auto_now=True)
-
+    timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
 
 class UserDetails(ndb.Model):
     token = ndb.StringProperty(required=True)
@@ -140,6 +141,11 @@ class UserDetails(ndb.Model):
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
 
+class Manager(ndb.Model):
+    name = ndb.StringProperty(required=True)
+    email = ndb.StringProperty(required=True)
+    managerType = ndb.StringProperty(required=True)
+    password = ndb.StringProperty(required=True)
 
 class Admin(ndb.Model):
     id = ndb.StringProperty(required=True)
@@ -196,7 +202,7 @@ def sendGcmMessage(message, groups):
                 'to': '/topics/' + group}
         request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
-            resp = u2.urlopen(request, timeout=30)
+            resp = u2.urlopen(request,timeout=30)
             results = json.loads(resp.read())
             return True
         except u2.HTTPError as e:
@@ -721,26 +727,16 @@ class FileHandler(Handler):
 class ResultsHandler(Handler):
     def post(self):
         regNo = self.request.get("regNo")
-        data = {"txtRegno": regNo, "hfIdno": 236, "ddlSemester": 6, "__EVENTTARGET": "", "__EVENTARGUMENT": "",
-                "__VIEWSTATE": "/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJWSRUCATABNhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYEAhMPFCsAAg8WBB4LXyFEYXRhQm91bmRnHgtfIUl0ZW1Db3VudAL/////D2RkZAIXDw8WAh4EVGV4dGVkZBgCBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WAwUKYnRuaW1nU2hvdwUQYnRuaW1nU2hvd1Jlc3VsdAUMYnRuaW1nQ2FuY2VsBRBsdlN1YmplY3REZXRhaWxzD2dk",
-                "HiddenField1": "", "btnimgShowResult.x": 39, "btnimgShowResult.y": 4}
+        
+        dataFormat = [{"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJJSRUCATABMhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFCkFNSVQgS1VNQVJkZAIHDw8WAh8BBQkxNENTRTEwMDFkZAIJDw8WAh8BBQJJSWRkAgsPDxYCHwEFAUlkZAINDw8WAh8BBQdCLlRlY2guZGQCDw8PFgIfAQUgQ29tcHV0ZXIgU2NpZW5jZSBhbmQgRW5naW5lZXJpbmdkZAITDxQrAAIPFgQeC18hRGF0YUJvdW5kZx4LXyFJdGVtQ291bnQCCWRkZAIVDw8WAh8BBQIyMmRkAhcPDxYCHwFlZGQCGQ8PFgIfAQUCMjFkZAIbDw8WAh8BBQMxNjRkZAIdDw8WAh8BBQQ3LjgxZGQCHw8PFgIfAQUCNDNkZAIhDw8WAh8BBQMzMzFkZAIjDw8WAh8BBQQ3LjcwZGQYAgUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgMFCmJ0bmltZ1Nob3cFEGJ0bmltZ1Nob3dSZXN1bHQFDGJ0bmltZ0NhbmNlbAUQbHZTdWJqZWN0RGV0YWlscw88KwAKAQgCCWQ=", "txtRegno":"14CSE1001", "hfIdno":"448", "ddlSemester": "2", "HiddenField1":"", "btnimgShowResult.x":24, "btnimgShowResult.y":10}, {"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJJVhUCATABNBQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFCkFNSVQgS1VNQVJkZAIHDw8WAh8BBQkxNENTRTEwMDFkZAIJDw8WAh8BBQJJSWRkAgsPDxYCHwEFAUlkZAINDw8WAh8BBQdCLlRlY2guZGQCDw8PFgIfAQUgQ29tcHV0ZXIgU2NpZW5jZSBhbmQgRW5naW5lZXJpbmdkZAITDxQrAAIPFgQeC18hRGF0YUJvdW5kZx4LXyFJdGVtQ291bnQCCWRkZAIVDw8WAh8BBQIyMmRkAhcPDxYCHwFlZGQCGQ8PFgIfAQUCMjFkZAIbDw8WAh8BBQMxNjRkZAIdDw8WAh8BBQQ3LjgxZGQCHw8PFgIfAQUCNDNkZAIhDw8WAh8BBQMzMzFkZAIjDw8WAh8BBQQ3LjcwZGQYAgUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgMFCmJ0bmltZ1Nob3cFEGJ0bmltZ1Nob3dSZXN1bHQFDGJ0bmltZ0NhbmNlbAUQbHZTdWJqZWN0RGV0YWlscw88KwAKAQgCCWQ=", "txtRegno":"13CSE019", "hfIdno":"314", "ddlSemester": "4", "HiddenField1":"", "btnimgShowResult.x":45, "btnimgShowResult.y":9}, {"__EVENTTARGET":"", "__EVENTARGUMENT":"", "__VIEWSTATE":"/wEPDwUJMjIzMTE0MDQxD2QWAgIBD2QWBAILDxBkEBUCBlNlbGVjdAJWSRUCATABNhQrAwJnZxYBZmQCGQ8PFgIeB1Zpc2libGVoZBYiAgEPDxYCHgRUZXh0BRAyMDE0LTIwMTUgSUkgUkVHZGQCAw8PFgIfAQUHQi5UZWNoLmRkAgUPDxYCHwEFDlAgUkVTSE1BIFNBR0FSZGQCBw8PFgIfAQUIMTNDU0UwMTlkZAIJDw8WAh8BBQJJVmRkAgsPDxYCHwEFAklJZGQCDQ8PFgIfAQUHQi5UZWNoLmRkAg8PDxYCHwEFIENvbXB1dGVyIFNjaWVuY2UgYW5kIEVuZ2luZWVyaW5nZGQCEw8UKwACDxYEHgtfIURhdGFCb3VuZGceC18hSXRlbUNvdW50AghkZGQCFQ8PFgIfAQUCMjFkZAIXDw8WAh8BZWRkAhkPDxYCHwEFAjIwZGQCGw8PFgIfAQUDMTc2ZGQCHQ8PFgIfAQUEOC44MGRkAh8PDxYCHwEFAjg0ZGQCIQ8PFgIfAQUDNzg3ZGQCIw8PFgIfAQUEOS4zN2RkGAIFHl9fQ29udHJvbHNSZXF1aXJlUG9zdEJhY2tLZXlfXxYDBQpidG5pbWdTaG93BRBidG5pbWdTaG93UmVzdWx0BQxidG5pbWdDYW5jZWwFEGx2U3ViamVjdERldGFpbHMPPCsACgEIAghk", "txtRegno":"12CSE019", "hfIdno":"236", "ddlSemester": "6", "HiddenField1":"", "btnimgShowResult.x":33, "btnimgShowResult.y":14}]
+        dataFormat = dataFormat[::-1]
+        year = int(regNo[:2])
+        index = year%4
+        semester = ((index +3)%4)*2#remeber to add one and subtract one to get right results 
 
-        url = "http://www.nitgoa.ac.in/results/"
+        data = dataFormat[index]
+        data["txtRegno"] = regNo
 
-        request = u2.Request(url=url, data=ul.urlencode(data))
-
-        resp = u2.urlopen(request)
-
-        respText = resp.read()
-
-        tree = html.fromstring(respText)
-
-        semester = 0
-        for i in range(len(tree.xpath("id('ddlSemester')")[0].getchildren())):
-            if len(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()) == 2:
-                semester = int(tree.xpath("id('ddlSemester')")[0].getchildren()[i].values()[1])
-
-        data["ddlSemester"] = semester
 
         url = "http://www.nitgoa.ac.in/results/Default2.aspx"
 
@@ -750,8 +746,8 @@ class ResultsHandler(Handler):
 
         respText = resp.read()
 
-        tree = html.fromstring(respText)
 
+        tree = html.fromstring(respText)
         self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
 
 
@@ -760,14 +756,14 @@ class TokenSignInHandler(Handler):
     def post(self):
         token = self.request.get("idtoken")
         try:
-            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  # CLIENT_ID)
+            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
             # # If multiple clients access the backend server:
             # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
             #     raise crypt.AppIdentityError("Unrecognized client.")
             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
                 raise crypt.AppIdentityError("Wrong issuer.")
-                # if idinfo['hd'] != APPS_DOMAIN_NAME:
-                #     raise crypt.AppIdentityError("Wrong hosted domain.")
+            # if idinfo['hd'] != APPS_DOMAIN_NAME:
+            #     raise crypt.AppIdentityError("Wrong hosted domain.")
         except crypt.AppIdentityError:
             # Invalid token
             pass
@@ -787,6 +783,6 @@ app = webapp2.WSGIApplication([
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
-    ('/tokensignin', TokenSignInHandler), ('/app/attendance', AttendanceAppHandler),
+    ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler)
 ], debug=True)
