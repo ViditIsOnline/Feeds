@@ -1161,7 +1161,7 @@ app = webapp2.WSGIApplication([
     ('/timetable/cancel', CancelClassHandler), ('/timetable/cancel/confirm', CancelConfirmHandler),
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
-    ('/tokensignin' , TokenSignInHandler),('/app/attendance', AttendanceAppHandler),
+    ('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
     ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler), ('/pics/success', PicsSuccessHandler), ('/file/success', FileSuccessHandler)
     ,('/logout', LogoutHandler), ('/news/edit', EditNewsHandler), ('/news/edit/([^/]+)?', EditNewsEditorHandler),
