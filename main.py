@@ -298,7 +298,7 @@ class RegisterHandler(Handler):
         existing = UserDetails.query(UserDetails.email == email).fetch(1)
         if not existing:
             details = UserDetails()
-            details.token = id
+            details.id = id
             details.name = name
             details.email = email
             details.group = group
@@ -872,26 +872,26 @@ class ResultsHandler(Handler):
         tree = html.fromstring(respText)
         self.response.write(etree.tostring(tree.xpath("id('PnlShowResult')")[0]))
 
-class TokenSignInHandler(Handler):
-    # (Receive token by HTTPS POST)
-    def post(self):
-        token = self.request.get("idtoken")
-        try:
-            idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
-            # # If multiple clients access the backend server:
-            # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
-            #     raise crypt.AppIdentityError("Unrecognized client.")
-            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-                raise crypt.AppIdentityError("Wrong issuer.")
-            # if idinfo['hd'] != APPS_DOMAIN_NAME:
-            #     raise crypt.AppIdentityError("Wrong hosted domain.")
-        except crypt.AppIdentityError:
-            # Invalid token
-            pass
-        userid = idinfo['sub']
-        admin = Admin.query(Admin.id == userid).fetch(1)
-        if admin:
-            self.render_str()
+# class TokenSignInHandler(Handler):
+#     # (Receive token by HTTPS POST)
+#     def post(self):
+#         token = self.request.get("idtoken")
+#         try:
+#             idinfo = client.verify_id_token(token, WEB_CLIENT_ID)  #CLIENT_ID)
+#             # # If multiple clients access the backend server:
+#             # if idinfo['aud'] not in [WEB_CLIENT_ID]:  #ANDROID_CLIENT_ID, IOS_CLIENT_ID, WEB_CLIENT_ID]:
+#             #     raise crypt.AppIdentityError("Unrecognized client.")
+#             if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+#                 raise crypt.AppIdentityError("Wrong issuer.")
+#             # if idinfo['hd'] != APPS_DOMAIN_NAME:
+#             #     raise crypt.AppIdentityError("Wrong hosted domain.")
+#         except crypt.AppIdentityError:
+#             # Invalid token
+#             pass
+#         userid = idinfo['sub']
+#         admin = Admin.query(Admin.id == userid).fetch(1)
+#         if admin:
+#             self.render_str()
 
 class AddManagerHandler(Handler):
     def get(self):  
