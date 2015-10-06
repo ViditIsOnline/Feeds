@@ -32,7 +32,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from oauth2client import client, crypt
+#from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDAgxN-483Qq8eoj-zcfU0pUH5lSpC_kLQ"
