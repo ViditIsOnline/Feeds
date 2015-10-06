@@ -32,7 +32,7 @@ from google.appengine.ext import ndb
 from google.appengine.api import mail
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-#from oauth2client import client, crypt
+from oauth2client import client, crypt
 
 
 API_KEY = "AIzaSyDAgxN-483Qq8eoj-zcfU0pUH5lSpC_kLQ"
@@ -92,11 +92,13 @@ def valid_pw(name, pw, salt,  h):
 def scramble(password):
     return password
 
+
 class Pics(ndb.Model):
     caption = ndb.StringProperty(required=True)
     url = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
     addedBy = ndb.StringProperty(required=True)
+
 
 class News(ndb.Model):
     subject = ndb.StringProperty(required=True)
@@ -105,12 +107,14 @@ class News(ndb.Model):
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
     addedBy = ndb.StringProperty(required=True)
 
+
 class Community(ndb.Model):
     name = ndb.StringProperty(required=True)
     about = ndb.TextProperty(required=True)
     image = ndb.BlobProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
     addedBy = ndb.StringProperty(required=True)
+
 
 class Attendance(ndb.Model):
     macId = ndb.StringProperty(required=True)
@@ -124,6 +128,7 @@ class File(ndb.Model):
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
     addedBy = ndb.StringProperty(required=True)
 
+
 class Timetable(ndb.Model):
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
@@ -136,10 +141,12 @@ class Timetable(ndb.Model):
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
     addedBy = ndb.StringProperty(required=True)
 
+
 class RegistrationIds(ndb.Model):
     id = ndb.StringProperty()
     name = ndb.StringProperty()
     timestamp = ndb.DateTimeProperty(required = True, auto_now = True)
+
 
 class UserDetails(ndb.Model):
     token = ndb.StringProperty(required=True)
@@ -149,12 +156,14 @@ class UserDetails(ndb.Model):
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
 
+
 class Manager(ndb.Model):
     name = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     managerType = ndb.StringProperty(required=True)
     password = ndb.StringProperty(required=True)
     salt = ndb.StringProperty(required=True)
+
 
 class Admin(ndb.Model):
     id = ndb.StringProperty(required=True)
@@ -188,7 +197,8 @@ class Handler(webapp2.RequestHandler):
             if valid_pw(email, password, salt, hashVal):
                 return manager 
             else:
-                return None 
+                return None
+
     def getParameter(self):
         manager = self.authenticateUser()
         if manager:
@@ -277,7 +287,7 @@ class HomeHandler(Handler):
 
 class RegisterHandler(Handler):
     def post(self):
-        token = self.request.get("id")
+        id = self.request.get("id")
         name = self.request.get("name")
         email = self.request.get("email")
         group = self.request.get("group")
@@ -287,7 +297,7 @@ class RegisterHandler(Handler):
         existing = UserDetails.query(UserDetails.email == email).fetch(1)
         if not existing:
             details = UserDetails()
-            details.token = token
+            details.token = id
             details.name = name
             details.email = email
             details.group = group
@@ -501,7 +511,8 @@ class PicsAppHandler(Handler):
             picsUrl.append(data)
         self.response.write(json.dumps(picsUrl))
 
-#needs work on html 
+#needs work on html
+
 class PicsUploaderHandler(Handler):
     def get(self):
         self.render("picUploader.html")
@@ -738,6 +749,7 @@ class ScheduleClassHandler(Handler):
                     self.response.write("Cannot find timetable for the selected name")
             else:
                 self.response.write("Invalid name provided")
+
 
 class TimetableAppHandler(Handler):
     def post(self):
