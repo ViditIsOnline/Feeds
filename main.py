@@ -149,7 +149,7 @@ class RegistrationIds(ndb.Model):
 
 
 class UserDetails(ndb.Model):
-    id = ndb.StringProperty(required=True)
+    userId = ndb.StringProperty(required=True)
     name = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     group = ndb.StringProperty(required=True)
@@ -288,7 +288,7 @@ class HomeHandler(Handler):
 
 class RegisterHandler(Handler):
     def post(self):
-        id = self.request.get("id")
+        userId = self.request.get("id")
         url = self.request.get("url")
         name = self.request.get("name")
         email = self.request.get("email")
@@ -299,7 +299,7 @@ class RegisterHandler(Handler):
         existing = UserDetails.query(UserDetails.email == email).fetch(1)
         if not existing:
             details = UserDetails()
-            details.id = id
+            details.userId = userId
             details.url = url
             details.name = name
             details.email = email
@@ -929,27 +929,30 @@ class AddManagerHandler(Handler):
 
 class ChatHandler(Handler):
     def get(self):
-        users = UserDetails.query().fetch()
+        users = UserDetails.query().order(UserDetails.name).fetch()
         if users:
             pupil = []
             for user in users:
-                pupil.append({"id": user.id, "name": user.name, "url": user.url, "email": user.email, })
+                pupil.append({"id": user.userId, "name": user.name, "url": user.url, "email": user.email, })
             self.response.write(json.dumps(pupil))
 
-    def post(self):
-        id = self.request.get("id")
-        users = UserDetails.query(UserDetails.id != id).fetch()
-        if users:
-            pupil = []
-            for user in users:
-                pupil.append({"id": user.id, "name": user.name, "url": user.email, "email": user.email})
-            self.response.write(json.dumps(pupil))    
+    # def post(self):
+    #     userId = self.request.get("id")
+    #     logging.debug("Chat Requesting Id : " + userId)
+    #     users = UserDetails.query(UserDetails.userId != userId).fetch()
+    #     if users:
+    #         pupil = []
+    #         for user in users:
+    #             pupil.append({"id": user.userId, "name": user.name, "url": user.email, "email": user.email})
+    #         self.response.write(json.dumps(pupil))
+
 
 class PicsSuccessHandler(Handler):
     def get(self):
         parameter = self.getParameter()
         if parameter:
             self.render("picUploaderSuccess.html", parameter = parameter)
+
 
 class FileSuccessHandler(Handler):
     def get(self):
