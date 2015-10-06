@@ -289,6 +289,7 @@ class HomeHandler(Handler):
 class RegisterHandler(Handler):
     def post(self):
         id = self.request.get("id")
+        url = self.request.get("url")
         name = self.request.get("name")
         email = self.request.get("email")
         group = self.request.get("group")
@@ -299,6 +300,7 @@ class RegisterHandler(Handler):
         if not existing:
             details = UserDetails()
             details.id = id
+            details.url = url
             details.name = name
             details.email = email
             details.group = group
