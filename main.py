@@ -149,12 +149,13 @@ class RegistrationIds(ndb.Model):
 
 
 class UserDetails(ndb.Model):
-    token = ndb.StringProperty(required=True)
+    id = ndb.StringProperty(required=True)
     name = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     group = ndb.StringProperty(required=True)
     branch = ndb.StringProperty(required=True)
     year = ndb.StringProperty(required=True)
+    url = ndb.StringProperty(required=True)
 
 
 class Manager(ndb.Model):
@@ -923,13 +924,23 @@ class AddManagerHandler(Handler):
             else:
                 self.response.write("You cant leave any field empty, try again!")    
 
+
 class ChatHandler(Handler):
     def get(self):
-        managers = Manager.query().fetch(10)
-        if managers:
+        users = UserDetails.query().fetch()
+        if users:
             pupil = []
-            for manager in managers:
-                pupil.append({"name": manager.name, "url":"", "email": manager.email})
+            for user in users:
+                pupil.append({"id": user.id, "name": user.name, "url": user.url, "email": user.email, })
+            self.response.write(json.dumps(pupil))
+
+    def post(self):
+        id = self.request.get("id")
+        users = UserDetails.query(UserDetails.id is not id).fetch()
+        if users:
+            pupil = []
+            for user in users:
+                pupil.append({"id": user.id, "name": user.name, "url": user.email, "email": user.email})
             self.response.write(json.dumps(pupil))    
 
 class PicsSuccessHandler(Handler):
