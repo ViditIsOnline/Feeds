@@ -150,6 +150,7 @@ class RegistrationIds(ndb.Model):
 
 class UserDetails(ndb.Model):
     userId = ndb.StringProperty(required=True)
+    token = ndb.StringProperty(required=True)
     name = ndb.StringProperty(required=True)
     email = ndb.StringProperty(required=True)
     group = ndb.StringProperty(required=True)
@@ -226,6 +227,27 @@ def sendGcmMessage(message, groups):
             return False
 
 
+class TextHandler(webapp2.RequestHandler):
+    def post(self):
+        text = self.request.get("text")
+        to = self.request.get("to")
+        users = UserDetails.query(UserDetails.userId == to).fetch(1)
+        to = users[0].token
+        fr = self.request.get("from")
+        headers = {'Authorization': 'key=' + API_KEY, 'Content-Type': 'application/json'}
+        message = {"head": "Text",
+                   "message": {"from": fr, "text": text}}
+        data = {'data': message,
+                'to': to}
+        request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
+        try:
+            resp = u2.urlopen(request, timeout=30)
+            results = json.loads(resp.read())
+            return True
+        except u2.HTTPError as e:
+            return False
+
+
 class MainHandler(Handler):
     def get(self):
         manager = self.authenticateUser()
@@ -289,6 +311,7 @@ class HomeHandler(Handler):
 class RegisterHandler(Handler):
     def post(self):
         userId = self.request.get("id")
+        token = self.request.get("token")
         url = self.request.get("url")
         name = self.request.get("name")
         email = self.request.get("email")
@@ -300,6 +323,7 @@ class RegisterHandler(Handler):
         if not existing:
             details = UserDetails()
             details.userId = userId
+            details.token = token
             details.url = url
             details.name = name
             details.email = email
@@ -933,7 +957,7 @@ class ChatHandler(Handler):
         if users:
             pupil = []
             for user in users:
-                pupil.append({"id": user.userId, "name": user.name, "url": user.url, "email": user.email, })
+                pupil.append({"id": user.userId, "name": user.name, "url": user.url, "email": user.email })
             self.response.write(json.dumps(pupil))
 
     # def post(self):
@@ -1152,8 +1176,17 @@ class DeleteFileActualHandler(Handler):
             key.delete()
             self.render("DeleteFileSuccess.html", parameter = parameter)
         else:
-            self.response.write("You Aint authorized!")    
+            self.response.write("You Aint authorized!")
 
+
+class DetailsHandler(Handler):
+    def post(self):
+        userId = self.request.get("id")
+        users = UserDetails.query(UserDetails.userId == userId).fetch(1)
+        if users:
+            user = users[0]
+            details = {"name": user.name, "email": user.email, "url": user.url}
+            self.response.write(json.dumps(details))
 
 
 app = webapp2.WSGIApplication([
@@ -1168,12 +1201,14 @@ app = webapp2.WSGIApplication([
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/app/attendance', AttendanceAppHandler),
     ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
-    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler), ('/pics/success', PicsSuccessHandler), ('/file/success', FileSuccessHandler)
-    ,('/logout', LogoutHandler), ('/news/edit', EditNewsHandler), ('/news/edit/([^/]+)?', EditNewsEditorHandler),
-    ('/news/delete', DeleteNewsHandler), ('/news/delete/([^/]+)?', DeleteNewsActualHandler), 
-    ('/community/edit', EditCommunityHandler), ('/community/edit/([^/]+)?', EditCommunityEditorHandler)
-    ,('/community/delete', DeleteCommunityHandler), ('/community/delete/([^/]+)?', DeleteCommunityActualHandler), 
-    ('/timetable/edit', EditTimetableHomeHandler), ('/timetable/edit/submit', TimetableEditSubmitHandler), ('/timetable/schedule', ScheduleClassHandler),
-    ('/timetable/schedule/confirm', ScheduleConfirmHandler), ('/pics/delete', PicsDeleteHomeHandler), ('/pics/delete/([^/]+)?', DeletePicsActualHandler),
-    ('/file/delete', FileDeleteHomeHandler), ('/file/delete/([^/]+)?', DeleteFileActualHandler)
+    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler), ('/pics/success', PicsSuccessHandler),
+    ('/file/success', FileSuccessHandler),('/logout', LogoutHandler), ('/news/edit', EditNewsHandler),
+    ('/news/edit/([^/]+)?', EditNewsEditorHandler),('/news/delete', DeleteNewsHandler),
+    ('/news/delete/([^/]+)?', DeleteNewsActualHandler), ('/community/edit', EditCommunityHandler),
+    ('/community/edit/([^/]+)?', EditCommunityEditorHandler),('/community/delete', DeleteCommunityHandler),
+    ('/community/delete/([^/]+)?', DeleteCommunityActualHandler), ('/timetable/edit', EditTimetableHomeHandler),
+    ('/timetable/edit/submit', TimetableEditSubmitHandler), ('/timetable/schedule', ScheduleClassHandler),
+    ('/timetable/schedule/confirm', ScheduleConfirmHandler), ('/pics/delete', PicsDeleteHomeHandler),
+    ('/pics/delete/([^/]+)?', DeletePicsActualHandler), ('/file/delete', FileDeleteHomeHandler),
+    ('/file/delete/([^/]+)?', DeleteFileActualHandler), ('/app/text', TextHandler), ('/app/details', DetailsHandler)
 ], debug=True)
