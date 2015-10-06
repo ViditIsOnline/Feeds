@@ -938,7 +938,7 @@ class ChatHandler(Handler):
 
     def post(self):
         id = self.request.get("id")
-        users = UserDetails.query(UserDetails.id is not id).fetch()
+        users = UserDetails.query(UserDetails.id != id).fetch()
         if users:
             pupil = []
             for user in users:
