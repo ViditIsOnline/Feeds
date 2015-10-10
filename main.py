@@ -232,6 +232,7 @@ class TextHandler(webapp2.RequestHandler):
         to = self.request.get("to")
         fr = self.request.get("from")
         msgId = self.request.get("msgId")
+        logging.debug("From: %s, To: %s, Text: %s, MsgId: %s" % (fr, to, text, msgId))
         users = UserDetails.query(UserDetails.userId == to).fetch(1)
         to = users[0].token
         headers = {'Authorization': 'key=' + API_KEY, 'Content-Type': 'application/json'}
