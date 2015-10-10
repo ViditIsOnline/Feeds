@@ -84,7 +84,6 @@ def make_pw_hash(name, pw, salt=None):
         h = hashlib.sha256(name + pw + salt).hexdigest()
         return h    
 
-
 def valid_pw(name, pw, salt,  h):
     return h == make_pw_hash(name, pw, salt)
 
@@ -221,7 +220,7 @@ def sendGcmMessage(message, groups):
         request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
             resp = u2.urlopen(request,timeout=30)
-            results = json.loads(resp.read())
+            # results = json.loads(resp.read())
             return True
         except u2.HTTPError as e:
             return False
@@ -231,21 +230,22 @@ class TextHandler(webapp2.RequestHandler):
     def post(self):
         text = self.request.get("text")
         to = self.request.get("to")
+        fr = self.request.get("from")
+        msgId = self.request.get("msgId")
         users = UserDetails.query(UserDetails.userId == to).fetch(1)
         to = users[0].token
-        fr = self.request.get("from")
         headers = {'Authorization': 'key=' + API_KEY, 'Content-Type': 'application/json'}
-        message = {"head": "Text",
-                   "message": {"from": fr, "text": text}}
+        message = {"head": "text",
+                   "message": {"from": fr, "text": text, "msgId": msgId}}
         data = {'data': message,
                 'to': to}
         request = u2.Request(GCM_URL, headers=headers, data=json.dumps(data))
         try:
             resp = u2.urlopen(request, timeout=30)
             results = json.loads(resp.read())
-            return True
+            self.response.write(results)
         except u2.HTTPError as e:
-            return False
+            self.response.set_status(500, e)
 
 
 class MainHandler(Handler):
@@ -1200,10 +1200,10 @@ app = webapp2.WSGIApplication([
     ('/app/timetable', TimetableAppHandler),
     ('/news/success', NewsSuccessHandler), ('/community/success', CommunitySuccessHandler),
     ('/app/attendance', AttendanceAppHandler),
-    ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler), ('/results', ResultsHandler),
-    ('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler), ('/pics/success', PicsSuccessHandler),
-    ('/file/success', FileSuccessHandler),('/logout', LogoutHandler), ('/news/edit', EditNewsHandler),
-    ('/news/edit/([^/]+)?', EditNewsEditorHandler),('/news/delete', DeleteNewsHandler),
+    ('/app/files', FileAppHandler), ('/file/add', FileHandler), ('/confirm', ConfirmHandler),
+    ('/results', ResultsHandler),('/manager/add', AddManagerHandler), ("/app/chat", ChatHandler),
+    ('/pics/success', PicsSuccessHandler),('/file/success', FileSuccessHandler),('/logout', LogoutHandler),
+    ('/news/edit', EditNewsHandler), ('/news/edit/([^/]+)?', EditNewsEditorHandler),('/news/delete', DeleteNewsHandler),
     ('/news/delete/([^/]+)?', DeleteNewsActualHandler), ('/community/edit', EditCommunityHandler),
     ('/community/edit/([^/]+)?', EditCommunityEditorHandler),('/community/delete', DeleteCommunityHandler),
     ('/community/delete/([^/]+)?', DeleteCommunityActualHandler), ('/timetable/edit', EditTimetableHomeHandler),
